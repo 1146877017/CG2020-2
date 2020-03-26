@@ -1,7 +1,7 @@
 from .Primitive import Primitive
 from .Utils import *
 from enum import Enum
-import logging
+
 
 
 class Line(Primitive):

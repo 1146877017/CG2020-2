@@ -1,6 +1,7 @@
 from typing import List
 from abc import ABC, abstractmethod
 from .Utils import *
+from math import atan2, cos, sin, degrees, radians, sqrt
 
 
 class Primitive(ABC):
@@ -25,13 +26,18 @@ class Primitive(ABC):
         pass
 
     def translatePoint(self, x0: int, y0: int, dx: int, dy: int) -> Point:
-        return x0+dx, y0+dy
+        return (round(x0+dx), round(y0+dy))
 
     def rotatePoint(self, x0: int, y0: int, x: int, y: int, r: int) -> Point:
-        pass
+        dx = x0 - x
+        dy = y0 - y
+        l = sqrt(dx**2+dy**2)
+        degree = degrees(atan2(float(dy), float(dx)))
+        radian = radians(degree - r)
+        return (round(x+l*cos(radian)), round(y+l*sin(radian)))
 
     def scalePoint(self, x0: int, y0: int, x: int, y: int, s: float) -> Point:
-        pass
+        return (round(x0*s+(1-s)*x), round(y0*s+(1-s)*y))
 
     @abstractmethod
     def __str__(self):
