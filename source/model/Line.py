@@ -155,6 +155,69 @@ class Line(Primitive):
         return accept
 
     def clip_Liang_Barsky(self, cx0: int, cy0: int, cx1: int, cy1: int) -> bool:
+        x1 = self.x0
+        y1 = self.y0
+        x2 = self.x1
+        y2 = self.y1
+        xmin = cx0
+        xmax = cx1
+        ymin = cy0
+        ymax = cy1
+
+        p1 = -(x2 - x1)
+        p2 = -p1
+        p3 = -(y2 - y1)
+        p4 = -p3
+
+        q1 = x1 - xmin
+        q2 = xmax - x1
+        q3 = y1 - ymin
+        q4 = ymax - y1
+
+        pos = [0.0] * 5
+        pos[0] = 1.0
+        neg = [0.0] * 5
+        posind = 1
+        negind = 1
+
+        if (p1 == 0 and q1 < 0) or (p2 == 0 and q2 < 0) or (p3 == 0 and q3 < 0) or (p4 == 0 and q4 < 0):
+            return False
+
+        if p1 != 0:
+            r1 = q1 / p1
+            r2 = q2 / p2
+            if p1 < 0:
+                neg[negind] = r1
+                pos[posind] = r2
+            else:
+                neg[negind] = r2
+                pos[posind] = r1
+            negind += 1
+            posind += 1
+
+        if p3 != 0:
+            r3 = q3 / p3
+            r4 = q4 / p4
+            if p3 < 0:
+                neg[negind] = r3
+                pos[posind] = r4
+            else:
+                neg[negind] = r4
+                pos[posind] = r3
+            negind += 1
+            posind += 1
+
+        rn1 = max(neg[:negind])
+        rn2 = min(pos[:posind])
+
+        if rn1 > rn2:
+            return False
+
+        self.x0 = round(x1 + p2 * rn1)
+        self.y0 = round(y1 + p4 * rn1)
+        self.x1 = round(x1 + p2 * rn2)
+        self.y1 = round(y1 + p4 * rn2)
+
         return True
 
     def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> bool:
