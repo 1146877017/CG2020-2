@@ -148,15 +148,22 @@ class Line(Primitive):
                     y1 = y
                     code1 = encode(x1, y1)
         if accept:
-            self.x0 = x0
-            self.y0 = y0
-            self.x1 = x1
-            self.y1 = y1
+            self.x0 = int(x0)
+            self.y0 = int(y0)
+            self.x1 = int(x1)
+            self.y1 = int(y1)
         return accept
+
+    def clip_Liang_Barsky(self, cx0: int, cy0: int, cx1: int, cy1: int) -> bool:
+        return True
 
     def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> bool:
         if algorithm == self.ClipAlgorithm.Cohen_Sutherland:
             return self.clip_Cohen_Sutherland(x0, y0, x1, y1)
+        elif algorithm == self.ClipAlgorithm.Liang_Barsky:
+            return self.clip_Liang_Barsky(x0, y0, x1, y1)
+        else:
+            raise TypeError("Invalid clip algorithm")
 
     def __str__(self):
         return f"Line from ({self.x0}, {self.y0}), to ({self.x1}, {self.y1}), using {self.algorithm}"
