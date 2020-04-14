@@ -12,7 +12,7 @@ class Board():
         self.height = height
         self.width = width
         self.color = ColorTable.BLACK
-        self.primitives: Dict[int, (Primitive, Color)] = {}
+        self.primitives: Dict[str, (Primitive, Color)] = {}
 
     def setColor(self, color: Color):
         self.color = color
@@ -29,24 +29,24 @@ class Board():
                     canvas[p[0]][p[1]] = color
         return canvas
 
-    def addPrimitive(self, id: int, p: Primitive):
+    def addPrimitive(self, id: str, p: Primitive):
         self.primitives[id] = (p, self.color)
 
-    def removePrimitive(self, id: int):
+    def removePrimitive(self, id: str):
         try:
             del self.primitives[id]
         except KeyError:
             pass
 
-    def translate(self, id: int, dx: int, dy: int):
+    def translate(self, id: str, dx: int, dy: int):
         if self.primitives.get(id):
             self.primitives[id][0].translate(dx, dy)
 
-    def rotate(self, id: int, x: int, y: int, r: int) -> None:
+    def rotate(self, id: str, x: int, y: int, r: int) -> None:
         if self.primitives.get(id):
             self.primitives[id][0].rotate(x, y, r)
 
-    def scale(self, id: int, x: int, y: int, s: float) -> None:
+    def scale(self, id: str, x: int, y: int, s: float) -> None:
         if self.primitives.get(id):
             self.primitives[id][0].scale(x, y, s)
 
