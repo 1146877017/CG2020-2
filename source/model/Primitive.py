@@ -49,7 +49,7 @@ class Primitive(ABC):
         dy = y0 - y
         l = sqrt(dx**2+dy**2)
         degree = degrees(atan2(float(dy), float(dx)))
-        radian = radians(degree - r)
+        radian = radians(degree + r)
         return (round(x+l*cos(radian)), round(y+l*sin(radian)))
 
     def scalePoint(self, x0: int, y0: int, x: int, y: int, s: float) -> Point:

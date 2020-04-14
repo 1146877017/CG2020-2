@@ -6,7 +6,7 @@ from PIL import Image
 
 
 class Board():
-    def __init__(self, height: int, width: int):
+    def __init__(self, width: int, height: int):
         if height <= 0 or width <= 0:
             raise ValueError("Board size should be greater to 0")
         self.height = height
@@ -17,16 +17,16 @@ class Board():
     def setColor(self, color: Color):
         self.color = color
 
-    def reset(self, height: int, width: int):
-        self.__init__(height, width)
+    def reset(self, width: int, height: int):
+        self.__init__(width, height)
 
     def render(self):
         canvas = np.zeros([self.height, self.width, 3], np.uint8)
         canvas.fill(255)
         for primitive, color in self.primitives.values():
             for p in primitive.render():
-                if p[0] >= 0 and p[0] < self.height and p[1] >= 0 and p[1] < self.width:
-                    canvas[p[0]][p[1]] = color
+                if p[0] >= 0 and p[0] < self.width and p[1] >= 0 and p[1] < self.height:
+                    canvas[p[1]][p[0]] = color
         return canvas
 
     def addPrimitive(self, id: str, p: Primitive):
