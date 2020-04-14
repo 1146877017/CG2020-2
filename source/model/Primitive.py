@@ -5,25 +5,41 @@ from math import atan2, cos, sin, degrees, radians, sqrt
 
 
 class Primitive(ABC):
-    @abstractmethod
     def __init__(self):
-        pass
+        self.saved = None
 
     @abstractmethod
+    def _render(self) -> List[Point]:
+        pass
+
     def render(self) -> List[Point]:
+        if not self.saved:
+            self.saved = self._render()
+        return self.saved
+
+    @abstractmethod
+    def _translate(self, dx: int, dy: int) -> None:
         pass
 
     @abstractmethod
+    def _rotate(self, x: int, y: int, r: int) -> None:
+        pass
+
+    @abstractmethod
+    def _scale(self, x: int, y: int, s: float) -> None:
+        pass
+
     def translate(self, dx: int, dy: int) -> None:
-        pass
+        self.saved = None
+        self._translate(dx, dy)
 
-    @abstractmethod
     def rotate(self, x: int, y: int, r: int) -> None:
-        pass
+        self.saved = None
+        self._rotate(x, y, r)
 
-    @abstractmethod
     def scale(self, x: int, y: int, s: float) -> None:
-        pass
+        self.saved = None
+        self._scale(x, y, s)
 
     def translatePoint(self, x0: int, y0: int, dx: int, dy: int) -> Point:
         return (round(x0+dx), round(y0+dy))
