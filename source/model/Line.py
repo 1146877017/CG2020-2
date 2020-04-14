@@ -83,9 +83,150 @@ class Line(Primitive):
         self.x0, self.y0 = self.scalePoint(self.x0, self.y0, x, y, s)
         self.x1, self.y1 = self.scalePoint(self.x1, self.y1, x, y, s)
 
-    def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> None:
+    def clip_Cohen_Sutherland(self, cx0: int, cy0: int, cx1: int, cy1: int) -> bool:
+        INSIDE = 0
+        LEFT = 1
+        RIGHT = 2
+        BOTTOM = 4
+        TOP = 8
 
-        pass
+        x0 = self.x0
+        y0 = self.y0
+        x1 = self.x1
+        y1 = self.y1
+        xmin = cx0
+        xmax = cx1
+        ymin = cy0
+        ymax = cy1
+
+        def encode(x: int, y: int) -> int:
+            c = INSIDE
+            if x < xmin:
+                c |= LEFT
+            elif x > xmax:
+                c |= RIGHT
+            if y < ymin:
+                c |= BOTTOM
+            elif y > ymax:
+                c |= TOP
+
+            return c
+
+        code0 = encode(x0, y0)
+        code1 = encode(x1, y1)
+
+        accept = False
+        while True:
+            if not(code0 | code1):
+                accept = True
+                break
+            elif code0 & code1:
+                break
+            else:
+                x = 0.0
+                y = 0.0
+                codet = max(code1, code0)
+                if codet & TOP:
+                    x = x0 + (x1-x0)*(ymax-y0)/(y1-y0)
+                    y = ymax
+                elif codet & BOTTOM:
+                    x = x0 + (x1-x0)*(ymin-y0)/(y1-y0)
+                    y = ymin
+                elif codet & RIGHT:
+                    y = y0 + (y1-y0)*(xmax-x0)/(x1-x0)
+                    x = xmax
+                elif codet & LEFT:
+                    y = y0 + (y1-y0)*(xmin-x0)/(x1-x0)
+                    x = xmin
+
+                if codet == code0:
+                    x0 = x
+                    y0 = y
+                    code0 = encode(x0, y0)
+                else:
+                    x1 = x
+                    y1 = y
+                    code1 = encode(x1, y1)
+        if accept:
+            self.x0 = int(x0)
+            self.y0 = int(y0)
+            self.x1 = int(x1)
+            self.y1 = int(y1)
+        return accept
+
+    def clip_Liang_Barsky(self, cx0: int, cy0: int, cx1: int, cy1: int) -> bool:
+        x1 = self.x0
+        y1 = self.y0
+        x2 = self.x1
+        y2 = self.y1
+        xmin = cx0
+        xmax = cx1
+        ymin = cy0
+        ymax = cy1
+
+        p1 = -(x2 - x1)
+        p2 = -p1
+        p3 = -(y2 - y1)
+        p4 = -p3
+
+        q1 = x1 - xmin
+        q2 = xmax - x1
+        q3 = y1 - ymin
+        q4 = ymax - y1
+
+        pos = [0.0] * 5
+        pos[0] = 1.0
+        neg = [0.0] * 5
+        posind = 1
+        negind = 1
+
+        if (p1 == 0 and q1 < 0) or (p2 == 0 and q2 < 0) or (p3 == 0 and q3 < 0) or (p4 == 0 and q4 < 0):
+            return False
+
+        if p1 != 0:
+            r1 = q1 / p1
+            r2 = q2 / p2
+            if p1 < 0:
+                neg[negind] = r1
+                pos[posind] = r2
+            else:
+                neg[negind] = r2
+                pos[posind] = r1
+            negind += 1
+            posind += 1
+
+        if p3 != 0:
+            r3 = q3 / p3
+            r4 = q4 / p4
+            if p3 < 0:
+                neg[negind] = r3
+                pos[posind] = r4
+            else:
+                neg[negind] = r4
+                pos[posind] = r3
+            negind += 1
+            posind += 1
+
+        rn1 = max(neg[:negind])
+        rn2 = min(pos[:posind])
+
+        if rn1 > rn2:
+            return False
+
+        self.x0 = round(x1 + p2 * rn1)
+        self.y0 = round(y1 + p4 * rn1)
+        self.x1 = round(x1 + p2 * rn2)
+        self.y1 = round(y1 + p4 * rn2)
+
+        return True
+
+    def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> bool:
+        if algorithm == self.ClipAlgorithm.Cohen_Sutherland:
+            return self.clip_Cohen_Sutherland(x0, y0, x1, y1)
+        elif algorithm == self.ClipAlgorithm.Liang_Barsky:
+            return self.clip_Liang_Barsky(x0, y0, x1, y1)
+        else:
+            raise TypeError("Invalid clip algorithm")
 
     def __str__(self):
         return f"Line from ({self.x0}, {self.y0}), to ({self.x1}, {self.y1}), using {self.algorithm}"
