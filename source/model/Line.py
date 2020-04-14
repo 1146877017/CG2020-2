@@ -83,9 +83,80 @@ class Line(Primitive):
         self.x0, self.y0 = self.scalePoint(self.x0, self.y0, x, y, s)
         self.x1, self.y1 = self.scalePoint(self.x1, self.y1, x, y, s)
 
-    def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> None:
+    def clip_Cohen_Sutherland(self, cx0: int, cy0: int, cx1: int, cy1: int) -> bool:
+        INSIDE = 0
+        LEFT = 1
+        RIGHT = 2
+        BOTTOM = 4
+        TOP = 8
 
-        pass
+        x0 = self.x0
+        y0 = self.y0
+        x1 = self.x1
+        y1 = self.y1
+        xmin = cx0
+        xmax = cx1
+        ymin = cy0
+        ymax = cy1
+
+        def encode(x: int, y: int) -> int:
+            c = INSIDE
+            if x < xmin:
+                c |= LEFT
+            elif x > xmax:
+                c |= RIGHT
+            if y < ymin:
+                c |= BOTTOM
+            elif y > ymax:
+                c |= TOP
+
+            return c
+
+        code0 = encode(x0, y0)
+        code1 = encode(x1, y1)
+
+        accept = False
+        while True:
+            if not(code0 | code1):
+                accept = True
+                break
+            elif code0 & code1:
+                break
+            else:
+                x = 0.0
+                y = 0.0
+                codet = max(code1, code0)
+                if codet & TOP:
+                    x = x0 + (x1-x0)*(ymax-y0)/(y1-y0)
+                    y = ymax
+                elif codet & BOTTOM:
+                    x = x0 + (x1-x0)*(ymin-y0)/(y1-y0)
+                    y = ymin
+                elif codet & RIGHT:
+                    y = y0 + (y1-y0)*(xmax-x0)/(x1-x0)
+                    x = xmax
+                elif codet & LEFT:
+                    y = y0 + (y1-y0)*(xmin-x0)/(x1-x0)
+                    x = xmin
+
+                if codet == code0:
+                    x0 = x
+                    y0 = y
+                    code0 = encode(x0, y0)
+                else:
+                    x1 = x
+                    y1 = y
+                    code1 = encode(x1, y1)
+        if accept:
+            self.x0 = x0
+            self.y0 = y0
+            self.x1 = x1
+            self.y1 = y1
+        return accept
+
+    def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> bool:
+        if algorithm == self.ClipAlgorithm.Cohen_Sutherland:
+            return self.clip_Cohen_Sutherland(x0, y0, x1, y1)
 
     def __str__(self):
         return f"Line from ({self.x0}, {self.y0}), to ({self.x1}, {self.y1}), using {self.algorithm}"

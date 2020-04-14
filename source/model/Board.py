@@ -39,16 +39,28 @@ class Board():
             pass
 
     def translate(self, id: str, dx: int, dy: int):
-        if self.primitives.get(id):
-            self.primitives[id][0].translate(dx, dy)
+        prim = self.primitives.get(id)
+        if prim:
+            prim[0].translate(dx, dy)
 
     def rotate(self, id: str, x: int, y: int, r: int) -> None:
-        if self.primitives.get(id):
-            self.primitives[id][0].rotate(x, y, r)
+        prim = self.primitives.get(id)
+        if prim:
+            prim[0].rotate(x, y, r)
 
     def scale(self, id: str, x: int, y: int, s: float) -> None:
-        if self.primitives.get(id):
-            self.primitives[id][0].scale(x, y, s)
+        prim = self.primitives.get(id)
+        if prim:
+            prim[0].scale(x, y, s)
+
+    def clip(self, id: str, x0: int, y0: int, x1: int, y1: int, algorithm) -> None:
+        prim = self.primitives.get(id)
+        if prim:
+            op = getattr(prim[0], "clip", None)
+            if op:
+                accept = prim[0].clip(x0, y0, x1, y1, algorithm)
+                if not accept:
+                    del self.primitives[id]
 
     def show(self):
         Image.fromarray(self.render()).show()
