@@ -49,96 +49,47 @@ class Curve(Primitive):
         return ret
 
     def render_B_spline(self) -> List[Point]:
+        def b(i: int, t: float):
+            if i == -2:
+                return (((-t + 3) * t - 3) * t + 1) / 6
+            elif i == -1:
+                return (((3 * t - 6) * t) * t + 4) / 6
+            elif i == 0:
+                return (((-3 * t + 3) * t + 3) * t + 1) / 6
+            elif i == 1:
+                return (t * t * t) / 6
+            return 0
+
+        def point(i: int, t: float, xps, yps):
+            px = 0
+            py = 0
+            for j in range(-2, 2):
+                px += b(j, t)*xps[i+j]
+                py += b(j, t)*yps[i+j]
+            return (round(px), round(py))
+
+        if len(self.points) < 4:
+            return self.render_Bezier(self.points)
+
         points = self.points
+        npoints = len(points) - 1
+        steps = 1
+        for i in range(npoints):
+            dx = abs(points[i+1][0]-points[i][0])
+            dy = abs(points[i+1][1]-points[i][1])
+            steps = max(round(dx + dy) * 3, steps)
+        pts = npoints * steps + 1
         ret = []
 
-        npoints = len(points)
-        if npoints < 4:
-            return self.render_Bezier(points)
+        xs = [_[0] for _ in points]
+        ys = [_[1] for _ in points]
 
-        p0 = points[0]
-        p1 = points[1]
-        p2 = points[2]
-        p3 = points[3]
-
-        x1 = p1[0]
-        y1 = p1[1]
-        x2 = (p1[0] + p2[0]) / 2
-        y2 = (p1[1] + p2[1]) / 2
-        x4 = (2 * p2[0] + p3[0]) / 3
-        y4 = (2 * p2[1] + p3[1]) / 3
-        x3 = (x2 + x4) / 2
-        y3 = (y2 + y4) / 2
-
-        ret += self.render_Bezier([
-            (points[0][0], points[0][1]),
-            (x1, y1),
-            (x2, y2),
-            (x3, y3)
-        ])
-
-        for i in range(2, npoints - 4):
-            p1 = p2
-            p2 = p3
-            p3 = points[i + 2]
-            x1 = x4
-            y1 = y4
-            x2 = (p1[0] + 2 * p2[0]) / 3
-            y2 = (p1[1] + 2 * p2[1]) / 3
-            x4 = (2 * p2[0] + p3[0]) / 3
-            y4 = (2 * p2[1] + p3[1]) / 3
-
-            x3_s = x3
-            y3_s = y3
-
-            x3 = (x2 + x4) / 2
-            y3 = (y2 + y4) / 2
-
-            ret += self.render_Bezier([
-                (x3_s, y3_s),
-                (x1, y1),
-                (x2, y2),
-                (x3, y3)
-            ])
-
-        p1 = p2
-        p2 = p3
-        p3 = points[npoints-2]
-        x1 = x4
-        y1 = y4
-        x2 = (p1[0] + 2 * p2[0]) / 3
-        y2 = (p1[1] + 2 * p2[1]) / 3
-        x4 = (p2[0] + p3[0]) / 2
-        y4 = (p2[1] + p3[1]) / 2
-        x3_s = x3
-        y3_s = y3
-        x3 = (x2 + x4) / 2
-        y3 = (y2 + y4) / 2
-
-        ret += self.render_Bezier([
-            (x3_s, y3_s),
-            (x1, y1),
-            (x2, y2),
-            (x3, y3)
-        ])
-
-        p2 = p3
-        p3 = points[npoints-1]
-        x1 = x4
-        y1 = y4
-        x2 = p2[0]
-        y2 = p2[1]
-        x3_s = x3
-        y3_s = y3
-        x3 = p3[0]
-        y3 = p3[1]
-
-        ret += self.render_Bezier([
-            (x3_s, y3_s),
-            (x1, y1),
-            (x2, y2),
-            (x3, y3)
-        ])
+        ret.append(point(2, 0, xs, ys))
+        for i in range(2, npoints):
+            for j in range(1, steps+1):
+                ret.append(
+                    point(i, j/steps, xs, ys)
+                )
 
         return ret
 
