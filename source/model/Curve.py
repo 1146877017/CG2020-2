@@ -11,13 +11,35 @@ class Curve(Primitive):
 
     def __init__(self, points: List[Point], algorithm: Algorithm):
         super().__init__()
-        if not points:
-            raise ValueError("Points number should be greater than 0")
+        if len(points) <= 1:
+            raise ValueError("Points number should be greater than 1")
         self.points = points
         self.algorithm = algorithm
 
-    def render_Bezier(self) -> List[Point]:
+    def render_Bezier(self, points) -> List[Point]:
+        npoints = len(points)
+        xs = [0] * npoints
+        ys = [0] * npoints
+        facts = [1] * (npoints)
+        for i in range(1, npoints):
+            facts[i] = facts[i-1] * i
+
+        for i in range(npoints):
+            base = facts[npoints-1] / (facts[i] * facts[npoints-1-i])
+            xs[i] = base * points[i][0]
+            ys[i] = base * points[i][1]
+
         ret = []
+        steps = 10000
+        for s in range(steps+1):
+            u = s / steps
+            x = 0
+            y = 0
+            for i in range(npoints):
+                x += xs[i] * (u ** i) * ((1-u) ** (npoints-1-i))
+                y += ys[i] * (u ** i) * ((1-u) ** (npoints-1-i))
+            ret.append((round(x), round(y)))
+
         return ret
 
     def render_B_spline(self) -> List[Point]:
@@ -26,7 +48,7 @@ class Curve(Primitive):
 
     def _render(self) -> List[Point]:
         if self.algorithm == self.Algorithm.Bezier:
-            return self.render_Bezier()
+            return self.render_Bezier(self.points)
         elif self.algorithm == self.Algorithm.B_spline:
             return self.render_B_spline()
         else:
