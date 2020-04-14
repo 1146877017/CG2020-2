@@ -29,8 +29,14 @@ class Curve(Primitive):
             xs[i] = base * points[i][0]
             ys[i] = base * points[i][1]
 
+        steps = 1
+
+        for i in range(npoints-1):
+            dx = abs(points[i+1][0]-points[i][0])
+            dy = abs(points[i+1][1]-points[i][1])
+            steps += (dx + dy) * 3
+
         ret = []
-        steps = 10000
         for s in range(steps+1):
             u = s / steps
             x = 0
