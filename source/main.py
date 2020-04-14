@@ -23,9 +23,9 @@ if __name__ == "__main__":
         Ellipse(150, 20, 20, 300)
     )
 
-    # board.translate(2, 100, 100)
-    # board.scale(2, 0, 0, 0.5)
-    # board.rotate(2, 100, 200, 180)
+    board.translate(2, 100, 100)
+    board.scale(2, 0, 0, 0.5)
+    board.rotate(2, 100, 200, 180)
 
     board.show()
     # board.save("test.bmp")

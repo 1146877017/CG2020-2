@@ -3,13 +3,17 @@ from .Utils import *
 from enum import Enum
 
 
-
 class Line(Primitive):
     class Algorithm(Enum):
         DDA = 1
         Bresenham = 2
 
+    class ClipAlgorithm(Enum):
+        Cohen_Sutherland = 1
+        Liang_Barsky = 2
+
     def __init__(self, x0: int, y0: int, x1: int, y1: int, algorithm: Algorithm):
+        super().__init__()
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
@@ -59,7 +63,7 @@ class Line(Primitive):
         ret.append((x, y))
         return ret
 
-    def render(self) -> List[Point]:
+    def _render(self) -> List[Point]:
         if self.algorithm == self.Algorithm.DDA:
             return self.render_DDA()
         elif self.algorithm == self.Algorithm.Bresenham:
@@ -67,17 +71,21 @@ class Line(Primitive):
         else:
             raise TypeError("Invalid line algorithm")
 
-    def translate(self, dx: int, dy: int) -> None:
+    def _translate(self, dx: int, dy: int) -> None:
         self.x0, self.y0 = self.translatePoint(self.x0, self.y0, dx, dy)
         self.x1, self.y1 = self.translatePoint(self.x1, self.y1, dx, dy)
 
-    def rotate(self, x: int, y: int, r: int) -> None:
+    def _rotate(self, x: int, y: int, r: int) -> None:
         self.x0, self.y0 = self.rotatePoint(self.x0, self.y0, x, y, r)
         self.x1, self.y1 = self.rotatePoint(self.x1, self.y1, x, y, r)
 
-    def scale(self, x: int, y: int, s: float) -> None:
+    def _scale(self, x: int, y: int, s: float) -> None:
         self.x0, self.y0 = self.scalePoint(self.x0, self.y0, x, y, s)
         self.x1, self.y1 = self.scalePoint(self.x1, self.y1, x, y, s)
+
+    def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> None:
+
+        pass
 
     def __str__(self):
         return f"Line from ({self.x0}, {self.y0}), to ({self.x1}, {self.y1}), using {self.algorithm}"

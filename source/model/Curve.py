@@ -10,6 +10,7 @@ class Curve(Primitive):
         B_spline = 2
 
     def __init__(self, points: List[Point], algorithm: Algorithm):
+        super().__init__()
         if not points:
             raise ValueError("Points number should be greater than 0")
         self.points = points
@@ -23,7 +24,7 @@ class Curve(Primitive):
         ret = []
         return ret
 
-    def render(self) -> List[Point]:
+    def _render(self) -> List[Point]:
         if self.algorithm == self.Algorithm.Bezier:
             return self.render_Bezier()
         elif self.algorithm == self.Algorithm.B_spline:
@@ -31,17 +32,17 @@ class Curve(Primitive):
         else:
             raise TypeError("Invalid curve algorithm")
 
-    def translate(self, dx: int, dy: int) -> None:
+    def _translate(self, dx: int, dy: int) -> None:
         for i in range(len(self.points)):
             self.points[i] = self.translatePoint(
                 self.points[i][0], self.points[i][1], dx, dy)
 
-    def rotate(self, x: int, y: int, r: int) -> None:
+    def _rotate(self, x: int, y: int, r: int) -> None:
         for i in range(len(self.points)):
             self.points[i] = self.rotatePoint(
                 self.points[i][0], self.points[i][1], x, y, r)
 
-    def scale(self, x: int, y: int, s: float) -> None:
+    def _scale(self, x: int, y: int, s: float) -> None:
         for i in range(len(self.points)):
             self.points[i] = self.scalePoint(
                 self.points[i][0], self.points[i][1], x, y, s)
