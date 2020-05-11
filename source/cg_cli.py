@@ -63,10 +63,16 @@ class Board():
                 if not accept:
                     del self.primitives[id]
 
-    def setColorPrim(self, id: str, color: Color):
+    def setPrimColor(self, id: str, color: Color):
         prim = self.primitives.get(id)
         if prim:
             self.primitives[id] = (prim[0], color)
+
+    def getPrimColor(self, id: str) -> Color:
+        prim = self.primitives.get(id)
+        if prim:
+            return prim[1]
+        return (0, 0, 0)
 
     def show(self):
         Image.fromarray(self.render()).show()
