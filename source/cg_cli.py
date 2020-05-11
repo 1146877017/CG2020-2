@@ -119,7 +119,6 @@ if __name__ == "__main__":
                     argv[1], Ellipse(
                         int(argv[2]), int(argv[3]),
                         int(argv[4]), int(argv[5]),
-                        Line.Algorithm.DDA if argv[-1] == "DDA" else Line.Algorithm.Bresenham
                     )
                 )
             elif argv[0] == "drawCurve":
