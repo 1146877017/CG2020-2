@@ -18,6 +18,9 @@ class Board():
     def setColor(self, color: Color):
         self.color = color
 
+    def getColor(self) -> Color:
+        return self.color
+
     def reset(self, width: int, height: int):
         self.__init__(width, height)
 
