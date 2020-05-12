@@ -20,8 +20,15 @@ class ColorTable():
 
 
 class Primitive(ABC):
-    def __init__(self):
+    class PType(Enum):
+        line = 0
+        polygon = 1
+        ellipse = 2
+        curve = 3
+
+    def __init__(self, t: PType):
         self.saved = None
+        self.type = t
 
     @abstractmethod
     def _render(self) -> List[Point]:
@@ -85,7 +92,7 @@ class Line(Primitive):
         Liang_Barsky = 2
 
     def __init__(self, x0: int, y0: int, x1: int, y1: int, algorithm: Algorithm):
-        super().__init__()
+        super().__init__(Primitive.PType.line)
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
@@ -307,7 +314,7 @@ class Line(Primitive):
 class Polygon(Primitive):
 
     def __init__(self, points: List[Point], algorithm: Line.Algorithm):
-        super().__init__()
+        super().__init__(Primitive.PType.polygon)
         if not points:
             raise ValueError("Points number should be greater than 0")
         self.lines: List[Line] = []
@@ -340,7 +347,7 @@ class Polygon(Primitive):
 class Ellipse(Primitive):
 
     def __init__(self, x0: int, y0: int, x1: int, y1: int):
-        super().__init__()
+        super().__init__(Primitive.PType.ellipse)
         self.cx = round((x0 + x1) / 2)
         self.cy = round((y0 + y1) / 2)
         self.rx = round(abs(x1 - x0) / 2)
@@ -420,7 +427,7 @@ class Curve(Primitive):
         B_spline = 2
 
     def __init__(self, points: List[Point], algorithm: Algorithm):
-        super().__init__()
+        super().__init__(Primitive.PType.curve)
         if len(points) <= 1:
             raise ValueError("Points number should be greater than 1")
         self.points = points

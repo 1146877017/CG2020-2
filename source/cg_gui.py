@@ -1,18 +1,64 @@
 from cg_algorithms import *
-from cg_cli import Board
 
 import sys
-from PyQt5.QtWidgets import QMainWindow, QAction, qApp, QApplication, QMenu, QLabel, QColorDialog
+
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QAction,
+    qApp,
+    QApplication,
+    QMenu,
+    QLabel,
+    QColorDialog,
+    QListWidget,
+    QListWidgetItem,
+    QWidget,
+    QHBoxLayout,
+    QGraphicsView,
+    QGraphicsItem,
+    QGridLayout)
+
 from PyQt5.QtGui import QIcon, QColor
+
+
+class Element(QGraphicsItem):
+    def __init__(self, id: str, primitive: Primitive, color: Color, parent=None):
+        super().__init__(parent=parent)
+        self.id = id
+        self.primitive = primitive
+        self.color = color
+
+    def __str__(self):
+        return f"{self.id} {self.primitive.type.name} ({self.color[0]},{self.color[1]},{self.color[2]})"
+
+
+class MainCanvas(QGraphicsView):
+    def __init__(self,  parent=None):
+        super().__init__(parent=parent)
+        self.listWidget = QListWidget(parent)
+        self.elements = {}
+
+    def addElement(self, e: Element):
+        self.elements[e.id] = e
+        self.listWidget.addItem(e.__str__())
+
+    def delElement(self, id: str):
+        try:
+            del self.elements[id]
+        except KeyError:
+            pass
 
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.board = Board(500, 500)
-        self.color = QColor()
+        self.color = (0, 0, 0)
+        self.size = (0, 0)
+        self.canvas = MainCanvas(self)
+
         self.initUI()
+
         self.setColor(0, 0, 0)
         self.setSize(500, 500)
 
@@ -24,12 +70,16 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         menubar.setNativeMenuBar(False)
 
-        self.setGeometry(300, 300, 1000, 800)
+        self.setGeometry(300, 300, 1200, 800)
 
         self.initStatusBar()
         self.initMenu()
+        self.initMain()
 
         self.show()
+
+        self.canvas.addElement(Element("fuck", Line(
+            1, 1, 100, 100, Line.Algorithm.DDA), self.color))
 
     def initStatusBar(self):
         self.sizeStatusLabel = QLabel("", self)
@@ -82,6 +132,11 @@ class MainWindow(QMainWindow):
         colorAction.setShortcut('Ctrl+P')
         colorAction.triggered.connect(self.pickColor)
         canvasMenu.addAction(colorAction)
+
+        # Delete
+        deleteAction = QAction('&Delete', self)
+        deleteAction.setStatusTip('Delete primitive')
+        deleteAction.setShortcut('Ctrl+D')
 
     def initPrimitiveMenu(self):
         primitiveMenu = self.menuBar().addMenu('&Primitive')
@@ -152,9 +207,28 @@ class MainWindow(QMainWindow):
         clipMenu.addAction(clipActionLiang)
         transformMenu.addMenu(clipMenu)
 
+    def initMain(self):
+        mainWidget = QWidget(self)
+        self.setCentralWidget(mainWidget)
+        horizonLayout = QHBoxLayout(mainWidget)
+
+        # Toolbar
+        self.initToolBar()
+        horizonLayout.addLayout(self.toolBar)
+
+        # Canvas
+        horizonLayout.addWidget(self.canvas)
+
+        # List
+        self.canvas.listWidget.setFixedWidth(150)
+        horizonLayout.addWidget(self.canvas.listWidget)
+
+    def initToolBar(self):
+        self.toolBar = QGridLayout()
+        self.toolBar.addWidget(QLabel("Tools"))
+
     def setColor(self, r: int, g: int, b: int):
-        self.board.setColor((r, g, b))
-        self.color.setRgb(r, g, b)
+        self.color = (r, g, b)
         self.colorStatusLabel.setText(f"Color: ({r}, {g}, {b})")
 
     def pickColor(self):
@@ -164,11 +238,10 @@ class MainWindow(QMainWindow):
             self.setColor(c[0], c[1], c[2])
 
     def setSize(self, width: int, height: int):
-        try:
-            self.board.reset(width, height)
-            self.sizeStatusLabel.setText(f"Size: ({width}, {height})")
-        except ValueError:
-            pass
+        if width < 100 or width > 1000 or height < 100 or height > 1000:
+            return
+        self.size = (width, height)
+        self.sizeStatusLabel.setText(f"Size: ({width}, {height})")
 
 
 if __name__ == "__main__":
