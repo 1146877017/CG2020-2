@@ -2,6 +2,8 @@ from cg_algorithms import *
 
 import sys
 
+from PyQt5.QtCore import Qt, QRectF
+
 from PyQt5.QtWidgets import (
     QMainWindow,
     QAction,
@@ -16,9 +18,10 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QGraphicsView,
     QGraphicsItem,
+    QGraphicsScene,
     QGridLayout)
 
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtGui import QIcon, QColor, QPainter
 
 
 class Element(QGraphicsItem):
@@ -27,26 +30,45 @@ class Element(QGraphicsItem):
         self.id = id
         self.primitive = primitive
         self.color = color
+        self.listItem = QListWidgetItem(self.__str__())
 
     def __str__(self):
-        return f"{self.id} {self.primitive.type.name} ({self.color[0]},{self.color[1]},{self.color[2]})"
+        return self.primitive.__str__()
+
+    def paint(self, painter, option, widget=None):
+        for p in self.primitive.render():
+            painter.drawPoint(*p)
+
+    def boundingRect(self) -> QRectF:
+        return QRectF(*self.primitive.boundingRect())
 
 
 class MainCanvas(QGraphicsView):
-    def __init__(self,  parent=None):
-        super().__init__(parent=parent)
+    def __init__(self, scene: QGraphicsScene, parent=None):
+        super().__init__(scene, parent=parent)
         self.listWidget = QListWidget(parent)
+        self.scene = scene
         self.elements = {}
 
     def addElement(self, e: Element):
         self.elements[e.id] = e
-        self.listWidget.addItem(e.__str__())
+        self.scene.addItem(e)
+        self.listWidget.addItem(e.listItem)
 
     def delElement(self, id: str):
         try:
+            e = self.elements[id]
+            self.scene.removeItem(e)
+            self.listWidget.takeItem(
+                self.listWidget.indexFromItem(e.listItem).row())
             del self.elements[id]
+
         except KeyError:
             pass
+
+    def clearElement(self):
+        for key in self.elements:
+            self.delElement(key)
 
 
 class MainWindow(QMainWindow):
@@ -55,12 +77,18 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.color = (0, 0, 0)
         self.size = (0, 0)
-        self.canvas = MainCanvas(self)
+        self.scene = QGraphicsScene(self)
+        self.canvas = MainCanvas(self.scene, self)
 
         self.initUI()
 
+        self.id = 0
         self.setColor(0, 0, 0)
         self.setSize(500, 500)
+
+        self.addElement(Line(100, 400, 300, 200, Line.Algorithm.DDA))
+        self.addElement(Line(200, 200, 400, 400, Line.Algorithm.DDA))
+        self.delElement("1")
 
     def initUI(self):
 
@@ -77,9 +105,6 @@ class MainWindow(QMainWindow):
         self.initMain()
 
         self.show()
-
-        self.canvas.addElement(Element("fuck", Line(
-            1, 1, 100, 100, Line.Algorithm.DDA), self.color))
 
     def initStatusBar(self):
         self.sizeStatusLabel = QLabel("", self)
@@ -137,6 +162,7 @@ class MainWindow(QMainWindow):
         deleteAction = QAction('&Delete', self)
         deleteAction.setStatusTip('Delete primitive')
         deleteAction.setShortcut('Ctrl+D')
+        canvasMenu.addAction(deleteAction)
 
     def initPrimitiveMenu(self):
         primitiveMenu = self.menuBar().addMenu('&Primitive')
@@ -217,10 +243,10 @@ class MainWindow(QMainWindow):
         horizonLayout.addLayout(self.toolBar)
 
         # Canvas
-        horizonLayout.addWidget(self.canvas)
+        horizonLayout.addWidget(self.canvas, alignment=Qt.AlignJustify)
 
         # List
-        self.canvas.listWidget.setFixedWidth(150)
+        self.canvas.listWidget.setFixedWidth(200)
         horizonLayout.addWidget(self.canvas.listWidget)
 
     def initToolBar(self):
@@ -229,7 +255,7 @@ class MainWindow(QMainWindow):
 
     def setColor(self, r: int, g: int, b: int):
         self.color = (r, g, b)
-        self.colorStatusLabel.setText(f"Color: ({r}, {g}, {b})")
+        self.colorStatusLabel.setText(f"Color: ({r},{g},{b})")
 
     def pickColor(self):
         color = QColorDialog.getColor()
@@ -241,7 +267,21 @@ class MainWindow(QMainWindow):
         if width < 100 or width > 1000 or height < 100 or height > 1000:
             return
         self.size = (width, height)
-        self.sizeStatusLabel.setText(f"Size: ({width}, {height})")
+        self.scene.setSceneRect(0, 0, width, height)
+        self.scene.addRect(-1, -1, width+2, height+2)
+        self.canvas.setFixedSize(width*1.05, height*1.05)
+        self.adjustSize()
+        self.sizeStatusLabel.setText(f"Size: ({width},{height})")
+
+    def getNewID(self) -> str:
+        self.id += 1
+        return str(self.id)
+
+    def addElement(self, primitive: Primitive):
+        self.canvas.addElement(Element(self.getNewID(), primitive, self.color))
+
+    def delElement(self, id: str):
+        self.canvas.delElement(id)
 
 
 if __name__ == "__main__":

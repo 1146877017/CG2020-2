@@ -31,6 +31,10 @@ class Primitive(ABC):
         self.type = t
 
     @abstractmethod
+    def boundingRect(self):
+        pass
+
+    @abstractmethod
     def _render(self) -> List[Point]:
         pass
 
@@ -98,6 +102,11 @@ class Line(Primitive):
         self.x1 = x1
         self.y1 = y1
         self.algorithm = algorithm
+
+    def boundingRect(self):
+        x = (self.x0, self.x1)
+        y = (self.y0, self.y1)
+        return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
 
     def render_DDA(self) -> List[Point]:
         ret = []
@@ -308,7 +317,7 @@ class Line(Primitive):
             raise TypeError("Invalid clip algorithm")
 
     def __str__(self):
-        return f"Line from ({self.x0}, {self.y0}), to ({self.x1}, {self.y1}), using {self.algorithm}"
+        return f"Line ({self.x0}, {self.y0}), ({self.x1}, {self.y1})"
 
 
 class Polygon(Primitive):
@@ -321,6 +330,33 @@ class Polygon(Primitive):
         for i in range(len(points)):
             self.lines.append(
                 Line(points[i-1][0], points[i-1][1], points[i][0], points[i][1], algorithm))
+
+    def boundingRect(self):
+        x = []
+        y = []
+        for l in self.lines:
+            x0, y0, xl, yl = l.boundingRect()
+            x.append(x0+1)
+            x.append(x0+xl-1)
+            y.append(y0+1)
+            y.append(y0+yl-1)
+
+        return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
+
+    def boundingRect(self):
+        xMin = []
+        xMax = []
+        yMin = []
+        yMax = []
+        for line in self.lines:
+            xMinT, yMinT, width, height = line.boundingRect()
+            xMaxT = xMinT + width
+            yMaxT = yMinT + height
+            xMin.append(xMinT)
+            xMax.append(xMaxT)
+            yMin.append(yMinT)
+            yMax.append(yMaxT)
+        return min(xMin), min(xMax), max(xMax)-min(xMin), max(yMax)-min(yMin)
 
     def _render(self) -> List[Point]:
         ret = []
@@ -341,7 +377,7 @@ class Polygon(Primitive):
             line.scale(x, y, s)
 
     def __str__(self):
-        return f"Polygon"
+        return f"Polygon ({self.lines[0].x0}, {self.lines[0].y0})"
 
 
 class Ellipse(Primitive):
@@ -352,6 +388,11 @@ class Ellipse(Primitive):
         self.cy = round((y0 + y1) / 2)
         self.rx = round(abs(x1 - x0) / 2)
         self.ry = round(abs(y1 - y0) / 2)
+
+    def boundingRect(self):
+        xMin, xMax = self.x0, self.x1 if self.x0 < self.x1 else self.x1, self.x0
+        yMin, yMax = self.y0, self.y1 if self.y0 < self.y1 else self.y1, self.y0
+        return xMin - 1, yMin - 1, xMax-xMin+2, yMax-yMin+2
 
     def _render(self) -> List[Point]:
         def draw4(l: List[Point], cx, cy, x, y):
@@ -418,7 +459,7 @@ class Ellipse(Primitive):
         self.ry = round(self.ry * s)
 
     def __str__(self):
-        return f"Ellipse at ({self.cx}, {self.cy}), {self.rx}, {self.ry}"
+        return f"Ellipse ({self.cx}, {self.cy}), {self.rx}, {self.ry}"
 
 
 class Curve(Primitive):
@@ -432,6 +473,14 @@ class Curve(Primitive):
             raise ValueError("Points number should be greater than 1")
         self.points = points
         self.algorithm = algorithm
+
+    def boundingRect(self):
+        x = []
+        y = []
+        for p in self.points:
+            x.append(p[0])
+            y.append(p[1])
+        return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
 
     def render_Bezier(self, points) -> List[Point]:
         npoints = len(points)
@@ -534,4 +583,4 @@ class Curve(Primitive):
                 self.points[i][0], self.points[i][1], x, y, s)
 
     def __str__(self):
-        return f"Curve"
+        return f"Curve ({self.points[0][0]}, {self.points[0][1]}), ..."
