@@ -24,6 +24,8 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QSpacerItem,
     QSizePolicy,
+    QInputDialog,
+    QLineEdit,
     QLayout)
 
 
@@ -62,6 +64,7 @@ class MainCanvas(QGraphicsView):
         super().__init__(scene, parent=parent)
         self.listWidget = QListWidget(parent)
         self.scene = scene
+        self.scene.setBackgroundBrush(Qt.white)
         self.elements = {}
 
     def addElement(self, e: Element):
@@ -187,11 +190,14 @@ class MainWindow(QMainWindow):
         # DDA
         lineActionDDA = QAction('&DDA', self)
         lineActionDDA.setStatusTip('Draw line with DDA algorithm')
+        lineActionDDA.triggered.connect(self.getLineDialog(Line.Algorithm.DDA))
         lineMenu.addAction(lineActionDDA)
         # Bresenham
         lineActionBresenham = QAction('&Bresenham', self)
         lineActionBresenham.setStatusTip('Draw line with Bresenham algorithm')
         lineMenu.addAction(lineActionBresenham)
+        lineActionBresenham.triggered.connect(
+            self.getLineDialog(Line.Algorithm.Bresenham))
         primitiveMenu.addMenu(lineMenu)
 
         # Polygon
@@ -360,6 +366,21 @@ class MainWindow(QMainWindow):
 
     def delElement(self, id: str):
         self.canvas.delElement(id)
+
+    def getLineDialog(self, algorithm: Line.Algorithm):
+        def f():
+            text, ok = QInputDialog().getText(
+                self, f"Draw Line({algorithm.name})", "x0 y0 x1 y1", echo=QLineEdit.Normal)
+            if not ok:
+                return
+            args = []
+            try:
+                args = list(map(lambda s: int(s), text.split()))
+            except:
+                pass
+            if len(args) == 4:
+                self.addElement(Line(*args, algorithm))
+        return f
 
 
 if __name__ == "__main__":
