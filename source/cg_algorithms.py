@@ -317,7 +317,7 @@ class Line(Primitive):
             raise TypeError("Invalid clip algorithm")
 
     def __str__(self):
-        return f"Line ({self.x0}, {self.y0}), ({self.x1}, {self.y1})"
+        return f"Line ({self.x0}, {self.y0})\u2192({self.x1}, {self.y1})"
 
 
 class Polygon(Primitive):
@@ -377,7 +377,7 @@ class Polygon(Primitive):
             line.scale(x, y, s)
 
     def __str__(self):
-        return f"Polygon ({self.lines[0].x0}, {self.lines[0].y0})"
+        return f"Polygon ({self.lines[0].x0}, {self.lines[0].y0})..."
 
 
 class Ellipse(Primitive):
@@ -459,7 +459,7 @@ class Ellipse(Primitive):
         self.ry = round(self.ry * s)
 
     def __str__(self):
-        return f"Ellipse ({self.cx}, {self.cy}), {self.rx}, {self.ry}"
+        return f"Ellipse ({self.cx}\u00B1{self.rx}, {self.cy}\u00B1{self.ry})"
 
 
 class Curve(Primitive):

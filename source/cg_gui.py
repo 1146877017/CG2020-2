@@ -190,7 +190,8 @@ class MainWindow(QMainWindow):
         # DDA
         lineActionDDA = QAction('&DDA', self)
         lineActionDDA.setStatusTip('Draw line with DDA algorithm')
-        lineActionDDA.triggered.connect(self.getLineDialog(Line.Algorithm.DDA))
+        lineActionDDA.triggered.connect(
+            self.getLineDialog(Line.Algorithm.DDA))
         lineMenu.addAction(lineActionDDA)
         # Bresenham
         lineActionBresenham = QAction('&Bresenham', self)
@@ -205,23 +206,106 @@ class MainWindow(QMainWindow):
         # DDA
         polygonActionDDA = QAction('&DDA', self)
         polygonActionDDA.setStatusTip('Draw polygon with DDA algorithm')
+        polygonActionDDA.triggered.connect(
+            self.getPolygonDialog(Line.Algorithm.DDA))
         polygonMenu.addAction(polygonActionDDA)
         # Bresenham
         polygonActionBresenham = QAction('&Bresenham', self)
         polygonActionBresenham.setStatusTip(
             'Draw polygon with Bresenham algorithm')
         polygonMenu.addAction(polygonActionBresenham)
+        polygonActionBresenham.triggered.connect(
+            self.getPolygonDialog(Line.Algorithm.Bresenham))
         primitiveMenu.addMenu(polygonMenu)
 
         # Ellipse
         ellipseAction = QAction('&Ellipse', self)
         ellipseAction.setStatusTip('Draw ellipse')
+        ellipseAction.triggered.connect(self.getEllipseDialog())
         primitiveMenu.addAction(ellipseAction)
 
         # Curve
-        curveAction = QAction('&Curve', self)
-        curveAction.setStatusTip('Draw curve')
-        primitiveMenu.addAction(curveAction)
+        # Bezier
+        curveMenu = QMenu('&Curve', self)
+        curveActionBezier = QAction('&Bezier', self)
+        curveActionBezier.setStatusTip('Draw curve with Bezier algorithm')
+        curveActionBezier.triggered.connect(
+            self.getCurveDialog(Curve.Algorithm.Bezier))
+        curveMenu.addAction(curveActionBezier)
+        # B Spline
+        curveActionB_spline = QAction('&B_spline', self)
+        curveActionB_spline.setStatusTip('Draw curve with B_spline algorithm')
+        curveActionB_spline.triggered.connect(
+            self.getCurveDialog(Curve.Algorithm.B_spline))
+        curveMenu.addAction(curveActionB_spline)
+
+        primitiveMenu.addMenu(curveMenu)
+
+    def getLineDialog(self, algorithm: Line.Algorithm):
+        def f():
+            text, ok = QInputDialog().getText(
+                self, f"Draw Line({algorithm.name})", "x0 y0 x1 y1", echo=QLineEdit.Normal)
+            if not ok:
+                return
+            args = []
+            try:
+                args = list(map(lambda s: int(s), text.split()))
+            except:
+                pass
+            if len(args) == 4:
+                self.addElement(Line(*args, algorithm))
+        return f
+
+    def getPolygonDialog(self, algorithm: Line.Algorithm):
+        def f():
+            text, ok = QInputDialog().getText(
+                self, f"Draw Polygon({algorithm.name})", "x0 y0 x1 y1 x2 y2 ...", echo=QLineEdit.Normal)
+            if not ok:
+                return
+            args = []
+            try:
+                args = list(map(lambda s: int(s), text.split()))
+            except:
+                pass
+            points = []
+            for i in range(len(args) // 2):
+                points.append((args[i*2], args[i*2+1]))
+            if points:
+                self.addElement(Polygon(points, algorithm))
+        return f
+
+    def getEllipseDialog(self):
+        def f():
+            text, ok = QInputDialog().getText(
+                self, "Draw Ellipse", "x0 y0 x1 y1 ...", echo=QLineEdit.Normal)
+            if not ok:
+                return
+            args = []
+            try:
+                args = list(map(lambda s: int(s), text.split()))
+            except:
+                pass
+            if len(args) == 4:
+                self.addElement(Ellipse(*args))
+        return f
+
+    def getCurveDialog(self, algorithm: Curve.Algorithm):
+        def f():
+            text, ok = QInputDialog().getText(
+                self, f"Draw Curve({algorithm.name})", "x0 y0 x1 y1 x2 y2 ...", echo=QLineEdit.Normal)
+            if not ok:
+                return
+            args = []
+            try:
+                args = list(map(lambda s: int(s), text.split()))
+            except:
+                pass
+            points = []
+            for i in range(len(args) // 2):
+                points.append((args[i*2], args[i*2+1]))
+            if points:
+                self.addElement(Curve(points, algorithm))
+        return f
 
     def initTransformMenu(self):
         transformMenu = self.menuBar().addMenu('&Transform')
@@ -366,21 +450,6 @@ class MainWindow(QMainWindow):
 
     def delElement(self, id: str):
         self.canvas.delElement(id)
-
-    def getLineDialog(self, algorithm: Line.Algorithm):
-        def f():
-            text, ok = QInputDialog().getText(
-                self, f"Draw Line({algorithm.name})", "x0 y0 x1 y1", echo=QLineEdit.Normal)
-            if not ok:
-                return
-            args = []
-            try:
-                args = list(map(lambda s: int(s), text.split()))
-            except:
-                pass
-            if len(args) == 4:
-                self.addElement(Line(*args, algorithm))
-        return f
 
 
 if __name__ == "__main__":
