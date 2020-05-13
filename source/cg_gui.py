@@ -16,12 +16,18 @@ from PyQt5.QtWidgets import (
     QListWidgetItem,
     QWidget,
     QHBoxLayout,
+    QVBoxLayout,
     QGraphicsView,
     QGraphicsItem,
     QGraphicsScene,
-    QGridLayout)
+    QPushButton,
+    QGridLayout,
+    QSpacerItem,
+    QSizePolicy,
+    QLayout)
 
-from PyQt5.QtGui import QIcon, QColor, QPainter
+
+from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette
 
 
 class Element(QGraphicsItem):
@@ -30,12 +36,15 @@ class Element(QGraphicsItem):
         self.id = id
         self.primitive = primitive
         self.color = color
-        self.listItem = QListWidgetItem(self.__str__())
+        self.listItem = QListWidgetItem(id + " " + self.__str__())
 
     def __str__(self):
         return self.primitive.__str__()
 
-    def paint(self, painter, option, widget=None):
+    def paint(self, painter: QPainter, option, widget=None):
+        c = QColor()
+        c.setRgb(*self.color)
+        painter.setPen(c)
         for p in self.primitive.render():
             painter.drawPoint(*p)
 
@@ -88,7 +97,8 @@ class MainWindow(QMainWindow):
 
         self.addElement(Line(100, 400, 300, 200, Line.Algorithm.DDA))
         self.addElement(Line(200, 200, 400, 400, Line.Algorithm.DDA))
-        self.delElement("1")
+        self.setColor(96, 211, 148)
+        self.addElement(Ellipse(200, 100, 350, 460))
 
     def initUI(self):
 
@@ -243,7 +253,11 @@ class MainWindow(QMainWindow):
         horizonLayout.addLayout(self.toolBar)
 
         # Canvas
-        horizonLayout.addWidget(self.canvas, alignment=Qt.AlignJustify)
+        horizonLayout.addWidget(self.canvas, alignment=Qt.AlignTop)
+
+        # Spacing
+        horizonLayout.addSpacerItem(QSpacerItem(
+            0, 0, hPolicy=QSizePolicy.Expanding, vPolicy=QSizePolicy.Expanding))
 
         # List
         self.canvas.listWidget.setFixedWidth(200)
@@ -251,7 +265,66 @@ class MainWindow(QMainWindow):
 
     def initToolBar(self):
         self.toolBar = QGridLayout()
-        self.toolBar.addWidget(QLabel("Tools"))
+        self.toolBar.setVerticalSpacing(5)
+        self.toolBar.setHorizontalSpacing(5)
+        col = 0
+        widthFull = 3
+
+        # Primitives
+        self.toolBar.addWidget(QLabel("Primitive"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Line"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Polygon"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Ellipse"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Curve"), col, 0, 1, widthFull)
+        col += 1
+
+        # Transform
+        self.toolBar.addWidget(QLabel("Transform"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Translate"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Rotate"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Scale"), col, 0, 1, widthFull)
+        col += 1
+        self.toolBar.addWidget(QPushButton("Clip"), col, 0, 1, widthFull)
+        col += 1
+
+        # Color
+        self.toolBar.addWidget(QLabel("Color"), col, 0, 1, widthFull)
+        col += 1
+        colors = [
+            [(0, 0, 0), (85, 85, 85), (170, 170, 170)],
+            [(255, 0, 0), (0, 255, 0), (0, 0, 255)],
+            [(0, 255, 255), (255, 0, 255), (255, 255, 0)],
+            [(223, 96, 85), (96, 211, 148), (170, 246, 231)],
+            [(203, 144, 77), (223, 203, 116), (195, 233, 145)],
+            [(180, 206, 179), (219, 211, 201), (250, 212, 216)],
+        ]
+
+        def getSetColor(main, r: int, g: int, b: int):
+            def f():
+                return main.setColor(r, g, b)
+            return f
+
+        for cs in colors:
+            for i in range(len(cs)):
+
+                b1 = QPushButton(u"\u25A0")
+                b1.setStyleSheet(
+                    f"QPushButton {{color:rgb({cs[i][0]},{cs[i][1]},{cs[i][2]});}}")
+                b1.clicked.connect(getSetColor(self, *cs[i]))
+                self.toolBar.addWidget(b1, col, i, 1, 1)
+
+            col += 1
+
+        # Spacer
+        self.toolBar.addItem(QSpacerItem(
+            0, 0, hPolicy=QSizePolicy.Expanding, vPolicy=QSizePolicy.Expanding), col, 0, 1, widthFull)
 
     def setColor(self, r: int, g: int, b: int):
         self.color = (r, g, b)

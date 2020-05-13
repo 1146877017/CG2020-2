@@ -390,9 +390,9 @@ class Ellipse(Primitive):
         self.ry = round(abs(y1 - y0) / 2)
 
     def boundingRect(self):
-        xMin, xMax = self.x0, self.x1 if self.x0 < self.x1 else self.x1, self.x0
-        yMin, yMax = self.y0, self.y1 if self.y0 < self.y1 else self.y1, self.y0
-        return xMin - 1, yMin - 1, xMax-xMin+2, yMax-yMin+2
+        x = [self.cx - self.rx, self.cx + self.rx]
+        y = [self.cy - self.ry, self.cy + self.ry]
+        return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
 
     def _render(self) -> List[Point]:
         def draw4(l: List[Point], cx, cy, x, y):
