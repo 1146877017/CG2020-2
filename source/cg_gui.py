@@ -31,12 +31,17 @@ from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette
 
 
 class Element(QGraphicsItem):
+    class ListItem(QListWidgetItem):
+        def __init__(self, element, *args):
+            super().__init__(*args)
+            self.element = element
+
     def __init__(self, id: str, primitive: Primitive, color: Color, parent=None):
         super().__init__(parent=parent)
         self.id = id
         self.primitive = primitive
         self.color = color
-        self.listItem = QListWidgetItem(id + " " + self.__str__())
+        self.listItem = self.ListItem(self, id + " " + self.__str__())
 
     def __str__(self):
         return self.primitive.__str__()
