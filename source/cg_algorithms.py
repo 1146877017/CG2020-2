@@ -310,6 +310,10 @@ class Line(Primitive):
 
     def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> bool:
         self.saved = None
+        if x0 > x1:
+            x0, x1 = x1, x0
+        if y0 > y1:
+            y0, y1 = y1, y0
         if algorithm == self.ClipAlgorithm.Cohen_Sutherland:
             return self.clip_Cohen_Sutherland(x0, y0, x1, y1)
         elif algorithm == self.ClipAlgorithm.Liang_Barsky:
