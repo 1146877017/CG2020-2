@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
     QMenu,
     QLabel,
     QColorDialog,
+    QFileDialog,
     QListWidget,
     QListWidgetItem,
     QWidget,
@@ -29,7 +30,7 @@ from PyQt5.QtWidgets import (
     QLayout)
 
 
-from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette
+from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette, QImage, QPixmap
 
 
 class Element(QGraphicsItem):
@@ -84,7 +85,8 @@ class MainCanvas(QGraphicsView):
             pass
 
     def clearElement(self):
-        for key in self.elements:
+        keys = [_ for _ in self.elements]
+        for key in keys:
             self.delElement(key)
 
 
@@ -101,7 +103,7 @@ class MainWindow(QMainWindow):
 
         self.id = 0
         self.setColor(0, 0, 0)
-        self.setSize(500, 500)
+        self.resetSize(500, 500)
 
         self.addElement(Line(100, 400, 300, 200, Line.Algorithm.DDA))
         self.addElement(Line(200, 200, 400, 400, Line.Algorithm.DDA))
@@ -142,15 +144,16 @@ class MainWindow(QMainWindow):
         fileMenu = self.menuBar().addMenu('&File')
 
         # Load action
-        loadAction = QAction('&Load', self)
-        loadAction.setStatusTip('Load from script')
-        loadAction.setShortcut('Ctrl+L')
-        fileMenu.addAction(loadAction)
+        # loadAction = QAction('&Load', self)
+        # loadAction.setStatusTip('Load from script')
+        # loadAction.setShortcut('Ctrl+L')
+        # fileMenu.addAction(loadAction)
 
         # Save action
         saveAction = QAction('&Save', self)
         saveAction.setStatusTip('Save the canvas')
         saveAction.setShortcut('Ctrl+S')
+        saveAction.triggered.connect(self.getSaveDialog)
         fileMenu.addAction(saveAction)
 
         # Exit action
@@ -160,6 +163,23 @@ class MainWindow(QMainWindow):
         exitAction.triggered.connect(qApp.quit)
         fileMenu.addAction(exitAction)
 
+    def saveFile(self, name: str):
+        img = QImage(self.size[0], self.size[1], QImage.Format_ARGB32)
+        painter = QPainter(img)
+        self.scene.render(painter)
+        img.save(name)
+        painter.end()
+
+    def getSaveDialog(self):
+        fileName = QFileDialog.getSaveFileName(
+            self, "Save Canvas", "output.bmp", "Images (*.bmp)")[0]
+        if not fileName:
+            return
+        try:
+            self.saveFile(fileName)
+        except:
+            pass
+
     def initCanvasMenu(self):
         canvasMenu = self.menuBar().addMenu('&Canvas')
 
@@ -167,6 +187,7 @@ class MainWindow(QMainWindow):
         resetAction = QAction('&Reset', self)
         resetAction.setStatusTip('Reset the canvas')
         resetAction.setShortcut('Ctrl+R')
+        resetAction.triggered.connect(self.getResetDialog)
         canvasMenu.addAction(resetAction)
 
         # Set color
@@ -180,7 +201,47 @@ class MainWindow(QMainWindow):
         deleteAction = QAction('&Delete', self)
         deleteAction.setStatusTip('Delete primitive')
         deleteAction.setShortcut('Ctrl+D')
+        deleteAction.triggered.connect(self.getDeleteDialog)
         canvasMenu.addAction(deleteAction)
+
+    def getResetDialog(self):
+        text, ok = QInputDialog().getText(
+            self, f"Reset Canvas", "width height(empty for keep current size)", echo=QLineEdit.Normal)
+        if not ok:
+            return
+        args = []
+        try:
+            args = list(map(lambda s: int(s), text.split()))
+        except:
+            pass
+        if len(args) == 0:
+            self.resetSize(*self.size)
+        elif len(args) == 2:
+            self.resetSize(*args)
+
+    def resetSize(self, width: int, height: int):
+        if width < 100 or width > 1000 or height < 100 or height > 1000:
+            return
+        self.id = 0
+        self.canvas.clearElement()
+        self.size = (width, height)
+        self.scene.clear()
+        self.scene.setSceneRect(0, 0, width, height)
+        self.scene.addRect(-1, -1, width+2, height+2)
+        self.canvas.setFixedSize(width*1.05, height*1.05)
+        self.adjustSize()
+        self.sizeStatusLabel.setText(f"Size: ({width},{height})")
+
+    def getNewID(self) -> str:
+        self.id += 1
+        return str(self.id)
+
+    def getDeleteDialog(self):
+        text, ok = QInputDialog().getText(
+            self, f"Reset Canvas", "width height(empty for keep current size)", echo=QLineEdit.Normal)
+        if not ok or not text:
+            return
+        self.canvas.delElement(text)
 
     def initPrimitiveMenu(self):
         primitiveMenu = self.menuBar().addMenu('&Primitive')
@@ -233,8 +294,8 @@ class MainWindow(QMainWindow):
             self.getCurveDialog(Curve.Algorithm.Bezier))
         curveMenu.addAction(curveActionBezier)
         # B Spline
-        curveActionB_spline = QAction('&B_spline', self)
-        curveActionB_spline.setStatusTip('Draw curve with B_spline algorithm')
+        curveActionB_spline = QAction('&B-spline', self)
+        curveActionB_spline.setStatusTip('Draw curve with B-spline algorithm')
         curveActionB_spline.triggered.connect(
             self.getCurveDialog(Curve.Algorithm.B_spline))
         curveMenu.addAction(curveActionB_spline)
@@ -430,20 +491,6 @@ class MainWindow(QMainWindow):
         if color.isValid():
             c = color.getRgb()
             self.setColor(c[0], c[1], c[2])
-
-    def setSize(self, width: int, height: int):
-        if width < 100 or width > 1000 or height < 100 or height > 1000:
-            return
-        self.size = (width, height)
-        self.scene.setSceneRect(0, 0, width, height)
-        self.scene.addRect(-1, -1, width+2, height+2)
-        self.canvas.setFixedSize(width*1.05, height*1.05)
-        self.adjustSize()
-        self.sizeStatusLabel.setText(f"Size: ({width},{height})")
-
-    def getNewID(self) -> str:
-        self.id += 1
-        return str(self.id)
 
     def addElement(self, primitive: Primitive):
         self.canvas.addElement(Element(self.getNewID(), primitive, self.color))
