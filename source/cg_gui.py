@@ -44,10 +44,10 @@ class Element(QGraphicsItem):
         self.id = id
         self.primitive = primitive
         self.color = color
-        self.listItem = self.ListItem(self, id + " " + self.__str__())
+        self.listItem = self.ListItem(self, self.__str__())
 
     def __str__(self):
-        return self.primitive.__str__()
+        return self.id + " " + self.primitive.__str__()
 
     def paint(self, painter: QPainter, option, widget=None):
         c = QColor()
@@ -81,13 +81,55 @@ class MainCanvas(QGraphicsView):
                 self.listWidget.indexFromItem(e.listItem).row())
             del self.elements[id]
 
-        except KeyError:
-            pass
+        except Exception as e:
+            print(e)
+
+    def getElement(self, id: str) -> Element:
+        try:
+            return self.elements[id]
+        except Exception as e:
+            print(e)
 
     def clearElement(self):
         keys = [_ for _ in self.elements]
         for key in keys:
             self.delElement(key)
+
+    def updateElement(self, id: str):
+        e = self.getElement(id)
+        if e:
+            self.scene.update()
+            e.listItem.setText(e.__str__())
+
+    def translateElement(self, id: str, dx: int, dy: int):
+        e = self.getElement(id)
+        if not e:
+            return
+        e.primitive.translate(dx, dy)
+        self.updateElement(id)
+
+    def rotateElement(self, id: str, x0: int, y0: int, deg: int):
+        e = self.getElement(id)
+        if not e:
+            return
+        e.primitive.rotate(x0, y0, deg)
+        self.updateElement(id)
+
+    def scaleElement(self, id: str, x0: int, y0: int, rate: float):
+        e = self.getElement(id)
+        if not e:
+            return
+        e.primitive.scale(x0, y0, rate)
+        self.updateElement(id)
+
+    def clipElement(self, id: str, x0: int, y0: int, x1: int, y1: int, algorithm: Line.ClipAlgorithm):
+        e = self.getElement(id)
+        if not e or e.primitive.type != Primitive.PType.line:
+            return
+        if e.primitive.clip(x0, y0, x1, y1, algorithm):
+            self.updateElement(id)
+        else:
+            self.delElement(id)
 
 
 class MainWindow(QMainWindow):
@@ -177,8 +219,8 @@ class MainWindow(QMainWindow):
             return
         try:
             self.saveFile(fileName)
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     def initCanvasMenu(self):
         canvasMenu = self.menuBar().addMenu('&Canvas')
@@ -212,8 +254,8 @@ class MainWindow(QMainWindow):
         args = []
         try:
             args = list(map(lambda s: int(s), text.split()))
-        except:
-            pass
+        except Exception as e:
+            print(e)
         if len(args) == 0:
             self.resetSize(*self.size)
         elif len(args) == 2:
@@ -311,8 +353,8 @@ class MainWindow(QMainWindow):
             args = []
             try:
                 args = list(map(lambda s: int(s), text.split()))
-            except:
-                pass
+            except Exception as e:
+                print(e)
             if len(args) == 4:
                 self.addElement(Line(*args, algorithm))
         return f
@@ -326,8 +368,8 @@ class MainWindow(QMainWindow):
             args = []
             try:
                 args = list(map(lambda s: int(s), text.split()))
-            except:
-                pass
+            except Exception as e:
+                print(e)
             points = []
             for i in range(len(args) // 2):
                 points.append((args[i*2], args[i*2+1]))
@@ -344,8 +386,8 @@ class MainWindow(QMainWindow):
             args = []
             try:
                 args = list(map(lambda s: int(s), text.split()))
-            except:
-                pass
+            except Exception as e:
+                print(e)
             if len(args) == 4:
                 self.addElement(Ellipse(*args))
         return f
@@ -359,8 +401,8 @@ class MainWindow(QMainWindow):
             args = []
             try:
                 args = list(map(lambda s: int(s), text.split()))
-            except:
-                pass
+            except Exception as e:
+                print(e)
             points = []
             for i in range(len(args) // 2):
                 points.append((args[i*2], args[i*2+1]))
@@ -374,16 +416,19 @@ class MainWindow(QMainWindow):
         # Translate
         translateAction = QAction('&Translate', self)
         translateAction.setStatusTip('Translate primitive')
+        translateAction.triggered.connect(self.getTranslateDialog)
         transformMenu.addAction(translateAction)
 
         # Rotate
         rotateAction = QAction('&Rotate', self)
         rotateAction.setStatusTip('Rotate any primitive')
+        rotateAction.triggered.connect(self.getRotateDialog)
         transformMenu.addAction(rotateAction)
 
         # Scale
         scaleAction = QAction('&Scale', self)
         scaleAction.setStatusTip('Scale any primitive')
+        scaleAction.triggered.connect(self.getScaleDialog)
         transformMenu.addAction(scaleAction)
 
         # Clip
@@ -392,12 +437,66 @@ class MainWindow(QMainWindow):
         clipActionCohen = QAction('&Cohen-Sutherland', self)
         clipActionCohen.setStatusTip(
             'Clip line with Cohen-Sutherland algorithm')
+        clipActionCohen.triggered.connect(
+            self.getClipDialog(Line.ClipAlgorithm.Cohen_Sutherland))
         clipMenu.addAction(clipActionCohen)
         # Liang-Barsky
         clipActionLiang = QAction('&Liang-Barsky', self)
         clipActionLiang.setStatusTip('Clip line with Liang-Barsky algorithm')
+        clipActionLiang.triggered.connect(
+            self.getClipDialog(Line.ClipAlgorithm.Liang_Barsky))
         clipMenu.addAction(clipActionLiang)
         transformMenu.addMenu(clipMenu)
+
+    def getTranslateDialog(self):
+        text, ok = QInputDialog().getText(
+            self, f"Translate", "id dx dy", echo=QLineEdit.Normal)
+        if not ok or not text:
+            return
+        try:
+            args = text.split()
+            self.canvas.translateElement(args[0], int(args[1]), int(args[2]))
+        except Exception as e:
+            print(e)
+
+    def getRotateDialog(self):
+        text, ok = QInputDialog().getText(
+            self, f"Rotate", "id x0 y0 degree", echo=QLineEdit.Normal)
+        if not ok or not text:
+            return
+        try:
+            args = text.split()
+            self.canvas.rotateElement(
+                args[0], int(args[1]), int(args[2]), int(args[3]))
+        except Exception as e:
+            print(e)
+
+    def getScaleDialog(self):
+        text, ok = QInputDialog().getText(
+            self, f"Scale", "id x0 y0 rate", echo=QLineEdit.Normal)
+        if not ok or not text:
+            return
+        try:
+            args = text.split()
+            self.canvas.scaleElement(
+                args[0], int(args[1]), int(args[2]), float(args[3]))
+        except Exception as e:
+            print(e)
+
+    def getClipDialog(self, algorithm: Line.ClipAlgorithm):
+        def f():
+            text, ok = QInputDialog().getText(
+                self, f"Clip", "id x0 y0 x1 x2", echo=QLineEdit.Normal)
+            if not ok or not text:
+                return
+            try:
+                args = text.split()
+                self.canvas.clipElement(
+                    args[0], int(args[1]), int(args[2]),
+                    int(args[3]), int(args[4]), algorithm)
+            except Exception as e:
+                print(e)
+        return f
 
     def initMain(self):
         mainWidget = QWidget(self)
