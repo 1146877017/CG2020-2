@@ -250,6 +250,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(exitAction)
 
     def saveFile(self, name: str):
+        self.canvas.clearSelection()
         img = QImage(self.size[0], self.size[1], QImage.Format_ARGB32)
         painter = QPainter(img)
         self.scene.render(painter)

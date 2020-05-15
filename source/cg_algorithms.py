@@ -345,7 +345,6 @@ class Polygon(Primitive):
             x.append(x0+xl-1)
             y.append(y0+1)
             y.append(y0+yl-1)
-            print(l.boundingRect())
         return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
 
     def _render(self) -> List[Point]:
@@ -573,4 +572,4 @@ class Curve(Primitive):
                 self.points[i][0], self.points[i][1], x, y, s)
 
     def __str__(self):
-        return f"Curve ({self.points[0][0]}, {self.points[0][1]}), ..."
+        return f"Curve ({self.points[0][0]}, {self.points[0][1]})\u2192({self.points[-1][0]}, {self.points[-1][1]})"
