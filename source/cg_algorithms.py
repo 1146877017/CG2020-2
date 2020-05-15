@@ -345,23 +345,8 @@ class Polygon(Primitive):
             x.append(x0+xl-1)
             y.append(y0+1)
             y.append(y0+yl-1)
-
+            print(l.boundingRect())
         return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
-
-    def boundingRect(self):
-        xMin = []
-        xMax = []
-        yMin = []
-        yMax = []
-        for line in self.lines:
-            xMinT, yMinT, width, height = line.boundingRect()
-            xMaxT = xMinT + width
-            yMaxT = yMinT + height
-            xMin.append(xMinT)
-            xMax.append(xMaxT)
-            yMin.append(yMinT)
-            yMax.append(yMaxT)
-        return min(xMin), min(xMax), max(xMax)-min(xMin), max(yMax)-min(yMin)
 
     def _render(self) -> List[Point]:
         ret = []
@@ -482,7 +467,7 @@ class Curve(Primitive):
     def boundingRect(self):
         x = []
         y = []
-        for p in self.points:
+        for p in self.render():
             x.append(p[0])
             y.append(p[1])
         return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
