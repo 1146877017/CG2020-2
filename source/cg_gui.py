@@ -27,10 +27,11 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QInputDialog,
     QLineEdit,
+    QMessageBox,
     QLayout)
 
 
-from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette, QImage, QPixmap
+from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette, QImage, QPixmap, QMouseEvent
 
 
 class Element(QGraphicsItem):
@@ -42,9 +43,10 @@ class Element(QGraphicsItem):
     def __init__(self, id: str, primitive: Primitive, color: Color, parent=None):
         super().__init__(parent=parent)
         self.id = id
-        self.primitive = primitive
-        self.color = color
-        self.listItem = self.ListItem(self, self.__str__())
+        self.primitive: Primitive = primitive
+        self.color: Color = color
+        self.listItem: self.ListItem = self.ListItem(self, self.__str__())
+        self.canvas: MainCanvas = None
 
     def __str__(self):
         return self.id + " " + self.primitive.__str__()
@@ -55,20 +57,54 @@ class Element(QGraphicsItem):
         painter.setPen(c)
         for p in self.primitive.render():
             painter.drawPoint(*p)
+        if self.listItem.isSelected():
+            pen = painter.pen()
+            c.setAlpha(96)
+            painter.setPen(c)
+            painter.drawRect(self.boundingRect())
 
     def boundingRect(self) -> QRectF:
         return QRectF(*self.primitive.boundingRect())
+
+    def mousePressEvent(self, event: QMouseEvent):
+        self.canvas.selectElementFromCanvas(self)
 
 
 class MainCanvas(QGraphicsView):
     def __init__(self, scene: QGraphicsScene, parent=None):
         super().__init__(scene, parent=parent)
-        self.listWidget = QListWidget(parent)
-        self.scene = scene
+        self.main = parent
+        self.listWidget: QListWidget = QListWidget(parent)
+        self.listWidget.itemSelectionChanged.connect(self.onSelectChanged)
+
+        self.scene: QGraphicsScene = scene
         self.scene.setBackgroundBrush(Qt.white)
+
         self.elements = {}
+        self.selecting: Element = None
+
+    def clearSelection(self):
+        for i in range(self.listWidget.count()):
+            item = self.listWidget.item(i)
+            item.setSelected(False)
+
+    def selectElementFromCanvas(self, e: Element):
+        self.clearSelection()
+        e.listItem.setSelected(True)
+
+    def onSelectChanged(self):
+        items = self.listWidget.selectedItems()
+        if not items:
+            self.selecting = None
+            self.main.infoStatusLabel.setText("")
+            return
+        self.selecting = items[0]
+        self.main.infoStatusLabel.setText(
+            "Selecting: " + items[0].element.__str__())
+        self.scene.update(self.scene.sceneRect())
 
     def addElement(self, e: Element):
+        e.canvas = self
         self.elements[e.id] = e
         self.scene.addItem(e)
         self.listWidget.addItem(e.listItem)
@@ -83,6 +119,8 @@ class MainCanvas(QGraphicsView):
 
         except Exception as e:
             print(e)
+
+        self.clearSelection()
 
     def getElement(self, id: str) -> Element:
         try:
@@ -169,10 +207,10 @@ class MainWindow(QMainWindow):
         self.show()
 
     def initStatusBar(self):
-        self.sizeStatusLabel = QLabel("", self)
-        self.statusBar().insertPermanentWidget(0, self.sizeStatusLabel)
         self.infoStatusLabel = QLabel("", self)
-        self.statusBar().insertPermanentWidget(1, self.infoStatusLabel)
+        self.statusBar().insertPermanentWidget(0, self.infoStatusLabel)
+        self.sizeStatusLabel = QLabel("", self)
+        self.statusBar().insertPermanentWidget(1, self.sizeStatusLabel)
         self.colorStatusLabel = QLabel("", self)
         self.statusBar().insertPermanentWidget(2, self.colorStatusLabel)
 
@@ -524,6 +562,33 @@ class MainWindow(QMainWindow):
         self.toolBar.setHorizontalSpacing(5)
         col = 0
         widthFull = 3
+
+        # Canvas
+        self.toolBar.addWidget(QLabel("Canvas"), col, 0, 1, widthFull)
+        col += 1
+
+        # Clear
+        def bClearFunc():
+            mBox = QMessageBox()
+            mBox.setText("The canvas will be cleared.")
+            mBox.setInformativeText("Are you sure?")
+            mBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            mBox.setDefaultButton(QMessageBox.No)
+            if mBox.exec_() == QMessageBox.Yes:
+                self.resetSize(*self.size)
+        bClear = QPushButton("Clear")
+        bClear.clicked.connect(bClearFunc)
+        self.toolBar.addWidget(bClear, col, 0, 1, widthFull)
+        col += 1
+
+        # Delete
+        def bDeleteFunc():
+            if self.canvas.selecting:
+                self.canvas.delElement(self.canvas.selecting.element.id)
+        bDelete = QPushButton("Delete")
+        bDelete.clicked.connect(bDeleteFunc)
+        self.toolBar.addWidget(bDelete, col, 0, 1, widthFull)
+        col += 1
 
         # Primitives
         self.toolBar.addWidget(QLabel("Primitive"), col, 0, 1, widthFull)
