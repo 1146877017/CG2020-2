@@ -1,6 +1,7 @@
 from cg_algorithms import *
 
 import sys
+from enum import Enum
 
 from PyQt5.QtCore import Qt, QRectF
 
@@ -32,6 +33,20 @@ from PyQt5.QtWidgets import (
 
 
 from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette, QImage, QPixmap, QMouseEvent
+
+
+class Acting(Enum):
+    Free = 0
+
+    Translate = 1
+    Rotate = 2
+    Scale = 3
+    Clip = 4
+
+    Line = 5
+    Polygon = 6
+    Ellipse = 7
+    Curve = 8
 
 
 class Element(QGraphicsItem):
@@ -66,14 +81,14 @@ class Element(QGraphicsItem):
     def boundingRect(self) -> QRectF:
         return QRectF(*self.primitive.boundingRect())
 
-    def mousePressEvent(self, event: QMouseEvent):
-        self.canvas.selectElementFromCanvas(self)
+    # def mousePressEvent(self, event: QMouseEvent):
+    #     self.canvas.selectElementFromCanvas(self)
 
 
 class MainCanvas(QGraphicsView):
     def __init__(self, scene: QGraphicsScene, parent=None):
         super().__init__(scene, parent=parent)
-        self.main = parent
+        self.main: MainWindow = parent
         self.listWidget: QListWidget = QListWidget(parent)
         self.listWidget.itemSelectionChanged.connect(self.onSelectChanged)
 
@@ -83,10 +98,14 @@ class MainCanvas(QGraphicsView):
         self.elements = {}
         self.selecting: Element = None
 
+        self.pointList = []
+        # self.helperCanvasItems = []
+
     def clearSelection(self):
         for i in range(self.listWidget.count()):
             item = self.listWidget.item(i)
             item.setSelected(False)
+        self.scene.update()
 
     def selectElementFromCanvas(self, e: Element):
         self.clearSelection()
@@ -169,11 +188,58 @@ class MainCanvas(QGraphicsView):
         else:
             self.delElement(id)
 
+    # def clearHelperCanvasItems(self):
+    #     for i in self.helperCanvasItems:
+    #         self.scene.removeItem(i)
+    #     self.helperCanvasItems = []
+
+    def mousePressEvent(self, event: QMouseEvent):
+        pos = self.mapToScene(event.localPos().toPoint())
+        x, y = int(pos.x()), int(pos.y())
+        if self.main.acting == Acting.Free:
+            minSquare = 10000 ** 2
+            targetE: Element = None
+            for id in self.elements:
+                e = self.elements[id]
+                rect = e.boundingRect()
+                if e.boundingRect().contains(x, y) and rect.width()*rect.height() < minSquare:
+                    targetE = e
+                    minSquare = rect.width()*rect.height()
+            if targetE:
+                self.selectElementFromCanvas(targetE)
+            else:
+                self.main.updateActingStatus(Acting.Free)
+                self.clearSelection()
+        else:
+            self.pointList.append((x, y))
+            if self.main.acting == Acting.Line:
+                if len(self.pointList) >= 2:
+                    self.main.addElement(
+                        Line(*self.pointList[0], *self.pointList[1], Line.Algorithm.DDA))
+                    self.main.bLine.toggle()
+            elif self.main.acting == Acting.Polygon:
+                pass
+            elif self.main.acting == Acting.Ellipse:
+                pass
+            elif self.main.acting == Acting.Curve:
+                pass
+            elif self.main.acting == Acting.Translate:
+                pass
+            elif self.main.acting == Acting.Rotate:
+                pass
+            elif self.main.acting == Acting.Scale:
+                pass
+            elif self.main.acting == Acting.Clip and self.selecting.primitive.type == Primitive.PType.line:
+                pass
+
+        self.scene.update()
+
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.acting: Acting = Acting.Free
         self.color = (0, 0, 0)
         self.size = (0, 0)
         self.scene = QGraphicsScene(self)
@@ -184,6 +250,7 @@ class MainWindow(QMainWindow):
         self.id = 0
         self.setColor(0, 0, 0)
         self.resetSize(500, 500)
+        self.updateActingStatus(Acting.Free)
 
         self.addElement(Line(100, 400, 300, 200, Line.Algorithm.DDA))
         self.addElement(Line(200, 200, 400, 400, Line.Algorithm.Bresenham))
@@ -219,6 +286,9 @@ class MainWindow(QMainWindow):
         self.statusBar().insertPermanentWidget(1, self.sizeStatusLabel)
         self.colorStatusLabel = QLabel("", self)
         self.statusBar().insertPermanentWidget(2, self.colorStatusLabel)
+
+    def updateActingStatus(self, acting: Acting):
+        self.acting = acting
 
     def initMenu(self):
         self.initFileMenu()
@@ -600,7 +670,20 @@ class MainWindow(QMainWindow):
         # Primitives
         self.toolBar.addWidget(QLabel("Primitive"), col, 0, 1, widthFull)
         col += 1
-        self.toolBar.addWidget(QPushButton("Line"), col, 0, 1, widthFull)
+
+        def bLineFunc(isDown: bool):
+            if isDown:
+                self.canvas.clearSelection()
+                self.updateActingStatus(Acting.Line)
+                self.canvas.pointList = []
+                return
+            self.canvas.pointList = []
+            self.updateActingStatus(Acting.Free)
+        bLine = QPushButton("Line")
+        self.bLine = bLine
+        bLine.setCheckable(True)
+        bLine.toggled.connect(bLineFunc)
+        self.toolBar.addWidget(bLine, col, 0, 1, widthFull)
         col += 1
         self.toolBar.addWidget(QPushButton("Polygon"), col, 0, 1, widthFull)
         col += 1
