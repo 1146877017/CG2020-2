@@ -109,6 +109,8 @@ class Line(Primitive):
         return min(x)-1, min(y)-1, max(x)-min(x)+2, max(y)-min(y)+2
 
     def render_DDA(self) -> List[Point]:
+        if self.x1 == self.x0 and self.y1 == self.y0:
+            return [(self.x1, self.y1)]
         ret = []
         dx0 = self.x1 - self.x0
         dy0 = self.y1 - self.y0
@@ -310,6 +312,10 @@ class Line(Primitive):
 
     def clip(self, x0: int, y0: int, x1: int, y1: int, algorithm: ClipAlgorithm) -> bool:
         self.saved = None
+
+        if x0 == x1 and y0 == y1:
+            return False
+
         if x0 > x1:
             x0, x1 = x1, x0
         if y0 > y1:
