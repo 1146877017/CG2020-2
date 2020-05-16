@@ -216,7 +216,7 @@ class MainCanvas(QGraphicsView):
             self.clearDrawingElement()
             if len(self.pointList) >= 3:
                 self.main.addElement(
-                    Curve(self.pointList[:-1], Curve.Algorithm.B_spline))
+                    Curve(self.pointList[:-1], Curve.Algorithm.Bezier))
             self.main.bCurve.toggle()
 
     def mousePressEvent(self, event: QMouseEvent):
@@ -255,7 +255,7 @@ class MainCanvas(QGraphicsView):
             elif self.main.acting == Acting.Curve:
                 if len(self.pointList) >= 2:
                     self.drawingElement = Element(
-                        "", Curve(self.pointList, Curve.Algorithm.B_spline), self.main.color)
+                        "", Curve(self.pointList, Curve.Algorithm.Bezier), self.main.color)
             elif self.main.acting == Acting.Translate:
                 pass
             elif self.main.acting == Acting.Rotate:
@@ -706,17 +706,8 @@ class MainWindow(QMainWindow):
         col += 1
 
         def getPrimitiveButton(a: Acting):
-            def f(b: bool):
-                if b:
-                    self.canvas.clearSelection()
-                    self.updateActingStatus(a)
-                    self.canvas.pointList = []
-                    return
-                self.canvas.pointList = []
-                self.updateActingStatus(Acting.Free)
             ret = QPushButton(a.name)
             ret.setCheckable(True)
-            ret.toggled.connect(f)
             return ret
 
         self.bLine = getPrimitiveButton(Acting.Line)
@@ -734,6 +725,28 @@ class MainWindow(QMainWindow):
         self.bCurve = getPrimitiveButton(Acting.Curve)
         self.toolBar.addWidget(self.bCurve, col, 0, 1, widthFull)
         col += 1
+
+        def getPrimitiveButtonFunc(s, a: Acting):
+            def f(b: bool):
+                if not b:
+                    self.canvas.pointList = []
+                    self.updateActingStatus(Acting.Free)
+                    return
+                for button in [self.bLine, self.bPolygon, self.bEllipse, self.bCurve]:
+                    if button != s and button.isChecked():
+                        button.toggle()
+                self.canvas.clearSelection()
+                self.updateActingStatus(a)
+                self.canvas.pointList = []
+            return f
+        self.bLine.toggled.connect(
+            getPrimitiveButtonFunc(self.bLine, Acting.Line))
+        self.bPolygon.toggled.connect(
+            getPrimitiveButtonFunc(self.bPolygon, Acting.Polygon))
+        self.bEllipse.toggled.connect(
+            getPrimitiveButtonFunc(self.bEllipse, Acting.Ellipse))
+        self.bCurve.toggled.connect(
+            getPrimitiveButtonFunc(self.bCurve, Acting.Curve))
 
         # Transform
         self.toolBar.addWidget(QLabel("Transform"), col, 0, 1, widthFull)
