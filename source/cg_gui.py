@@ -29,7 +29,8 @@ from PyQt5.QtWidgets import (
     QInputDialog,
     QLineEdit,
     QMessageBox,
-    QLayout)
+    QLayout
+)
 
 
 from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette, QImage, QPixmap, QMouseEvent
@@ -119,8 +120,7 @@ class MainCanvas(QGraphicsView):
             self.main.infoStatusLabel.setText("")
             return
         self.selecting = items[0]
-        self.main.infoStatusLabel.setText(
-            "Selecting: " + items[0].element.__str__())
+        self.main.infoStatusLabel.setText("Selecting: " + items[0].element.__str__())
         self.scene.update(self.scene.sceneRect())
 
     def addElement(self, e: Element):
@@ -133,8 +133,7 @@ class MainCanvas(QGraphicsView):
         try:
             e = self.elements[id]
             self.scene.removeItem(e)
-            self.listWidget.takeItem(
-                self.listWidget.indexFromItem(e.listItem).row())
+            self.listWidget.takeItem(self.listWidget.indexFromItem(e.listItem).row())
             del self.elements[id]
 
         except Exception as e:
@@ -209,14 +208,12 @@ class MainCanvas(QGraphicsView):
         elif self.main.acting == Acting.Polygon:
             self.clearDrawingElement()
             if len(self.pointList) >= 3:
-                self.main.addElement(
-                    Polygon(self.pointList[:-1], Line.Algorithm.DDA))
+                self.main.addElement(Polygon(self.pointList[:-1], Line.Algorithm.DDA))
             self.main.bPolygon.toggle()
         elif self.main.acting == Acting.Curve:
             self.clearDrawingElement()
             if len(self.pointList) >= 3:
-                self.main.addElement(
-                    Curve(self.pointList[:-1], Curve.Algorithm.Bezier))
+                self.main.addElement(Curve(self.pointList[:-1], Curve.Algorithm.Bezier))
             self.main.bCurve.toggle()
 
     def mousePressEvent(self, event: QMouseEvent):
@@ -240,22 +237,18 @@ class MainCanvas(QGraphicsView):
             self.pointList.append((x, y))
             if self.main.acting == Acting.Line:
                 if len(self.pointList) >= 2:
-                    self.main.addElement(
-                        Line(*self.pointList[0], *self.pointList[1], Line.Algorithm.DDA))
+                    self.main.addElement(Line(*self.pointList[0], *self.pointList[1], Line.Algorithm.DDA))
                     self.main.bLine.toggle()
             elif self.main.acting == Acting.Polygon:
                 if len(self.pointList) >= 2:
-                    self.drawingElement = Element(
-                        "", Polygon(self.pointList, Line.Algorithm.DDA), self.main.color)
+                    self.drawingElement = Element("", Polygon(self.pointList, Line.Algorithm.DDA), self.main.color)
             elif self.main.acting == Acting.Ellipse:
                 if len(self.pointList) >= 2:
-                    self.main.addElement(
-                        Ellipse(*self.pointList[0], *self.pointList[1]))
+                    self.main.addElement(Ellipse(*self.pointList[0], *self.pointList[1]))
                     self.main.bEllipse.toggle()
             elif self.main.acting == Acting.Curve:
                 if len(self.pointList) >= 2:
-                    self.drawingElement = Element(
-                        "", Curve(self.pointList, Curve.Algorithm.Bezier), self.main.color)
+                    self.drawingElement = Element("", Curve(self.pointList, Curve.Algorithm.Bezier), self.main.color)
             elif self.main.acting == Acting.Translate:
                 pass
             elif self.main.acting == Acting.Rotate:
@@ -291,11 +284,9 @@ class MainWindow(QMainWindow):
         self.setColor(96, 211, 148)
         self.addElement(Ellipse(200, 100, 350, 460))
         self.setColor(255, 0, 0)
-        self.addElement(
-            Polygon([(0, 0), (100, 200), (300, 100)], Line.Algorithm.Bresenham))
+        self.addElement(Polygon([(0, 0), (100, 200), (300, 100)], Line.Algorithm.Bresenham))
         self.setColor(0, 255, 0)
-        self.addElement(
-            Curve([(0, 0), (100, 200), (300, 100)], Curve.Algorithm.B_spline))
+        self.addElement(Curve([(0, 0), (100, 200), (300, 100)], Curve.Algorithm.B_spline))
 
     def initUI(self):
 
@@ -362,8 +353,7 @@ class MainWindow(QMainWindow):
         painter.end()
 
     def getSaveDialog(self):
-        fileName = QFileDialog.getSaveFileName(
-            self, "Save Canvas", "output.bmp", "Images (*.bmp)")[0]
+        fileName = QFileDialog.getSaveFileName(self, "Save Canvas", "output.bmp", "Images (*.bmp)")[0]
         if not fileName:
             return
         try:
@@ -396,8 +386,7 @@ class MainWindow(QMainWindow):
         canvasMenu.addAction(deleteAction)
 
     def getResetDialog(self):
-        text, ok = QInputDialog().getText(
-            self, f"Reset Canvas", "width height(empty for keep current size)", echo=QLineEdit.Normal)
+        text, ok = QInputDialog().getText(self, f"Reset Canvas", "width height(empty for keep current size)", echo=QLineEdit.Normal)
         if not ok:
             return
         args = []
@@ -428,8 +417,7 @@ class MainWindow(QMainWindow):
         return str(self.id)
 
     def getDeleteDialog(self):
-        text, ok = QInputDialog().getText(
-            self, f"Reset Canvas", "width height(empty for keep current size)", echo=QLineEdit.Normal)
+        text, ok = QInputDialog().getText(self, f"Reset Canvas", "width height(empty for keep current size)", echo=QLineEdit.Normal)
         if not ok or not text:
             return
         self.canvas.delElement(text)
@@ -442,15 +430,13 @@ class MainWindow(QMainWindow):
         # DDA
         lineActionDDA = QAction('&DDA', self)
         lineActionDDA.setStatusTip('Draw line with DDA algorithm')
-        lineActionDDA.triggered.connect(
-            self.getLineDialog(Line.Algorithm.DDA))
+        lineActionDDA.triggered.connect(self.getLineDialog(Line.Algorithm.DDA))
         lineMenu.addAction(lineActionDDA)
         # Bresenham
         lineActionBresenham = QAction('&Bresenham', self)
         lineActionBresenham.setStatusTip('Draw line with Bresenham algorithm')
         lineMenu.addAction(lineActionBresenham)
-        lineActionBresenham.triggered.connect(
-            self.getLineDialog(Line.Algorithm.Bresenham))
+        lineActionBresenham.triggered.connect(self.getLineDialog(Line.Algorithm.Bresenham))
         primitiveMenu.addMenu(lineMenu)
 
         # Polygon
@@ -458,16 +444,13 @@ class MainWindow(QMainWindow):
         # DDA
         polygonActionDDA = QAction('&DDA', self)
         polygonActionDDA.setStatusTip('Draw polygon with DDA algorithm')
-        polygonActionDDA.triggered.connect(
-            self.getPolygonDialog(Line.Algorithm.DDA))
+        polygonActionDDA.triggered.connect(self.getPolygonDialog(Line.Algorithm.DDA))
         polygonMenu.addAction(polygonActionDDA)
         # Bresenham
         polygonActionBresenham = QAction('&Bresenham', self)
-        polygonActionBresenham.setStatusTip(
-            'Draw polygon with Bresenham algorithm')
+        polygonActionBresenham.setStatusTip('Draw polygon with Bresenham algorithm')
         polygonMenu.addAction(polygonActionBresenham)
-        polygonActionBresenham.triggered.connect(
-            self.getPolygonDialog(Line.Algorithm.Bresenham))
+        polygonActionBresenham.triggered.connect(self.getPolygonDialog(Line.Algorithm.Bresenham))
         primitiveMenu.addMenu(polygonMenu)
 
         # Ellipse
@@ -481,14 +464,12 @@ class MainWindow(QMainWindow):
         curveMenu = QMenu('&Curve', self)
         curveActionBezier = QAction('&Bezier', self)
         curveActionBezier.setStatusTip('Draw curve with Bezier algorithm')
-        curveActionBezier.triggered.connect(
-            self.getCurveDialog(Curve.Algorithm.Bezier))
+        curveActionBezier.triggered.connect(self.getCurveDialog(Curve.Algorithm.Bezier))
         curveMenu.addAction(curveActionBezier)
         # B Spline
         curveActionB_spline = QAction('&B-spline', self)
         curveActionB_spline.setStatusTip('Draw curve with B-spline algorithm')
-        curveActionB_spline.triggered.connect(
-            self.getCurveDialog(Curve.Algorithm.B_spline))
+        curveActionB_spline.triggered.connect(self.getCurveDialog(Curve.Algorithm.B_spline))
         curveMenu.addAction(curveActionB_spline)
 
         primitiveMenu.addMenu(curveMenu)
@@ -528,8 +509,7 @@ class MainWindow(QMainWindow):
 
     def getEllipseDialog(self):
         def f():
-            text, ok = QInputDialog().getText(
-                self, "Draw Ellipse", "x0 y0 x1 y1 ...", echo=QLineEdit.Normal)
+            text, ok = QInputDialog().getText(self, "Draw Ellipse", "x0 y0 x1 y1 ...", echo=QLineEdit.Normal)
             if not ok:
                 return
             args = []
@@ -584,22 +564,18 @@ class MainWindow(QMainWindow):
         clipMenu = QMenu('&Clip', self)
         # Cohen-Sutherland
         clipActionCohen = QAction('&Cohen-Sutherland', self)
-        clipActionCohen.setStatusTip(
-            'Clip line with Cohen-Sutherland algorithm')
-        clipActionCohen.triggered.connect(
-            self.getClipDialog(Line.ClipAlgorithm.Cohen_Sutherland))
+        clipActionCohen.setStatusTip('Clip line with Cohen-Sutherland algorithm')
+        clipActionCohen.triggered.connect(self.getClipDialog(Line.ClipAlgorithm.Cohen_Sutherland))
         clipMenu.addAction(clipActionCohen)
         # Liang-Barsky
         clipActionLiang = QAction('&Liang-Barsky', self)
         clipActionLiang.setStatusTip('Clip line with Liang-Barsky algorithm')
-        clipActionLiang.triggered.connect(
-            self.getClipDialog(Line.ClipAlgorithm.Liang_Barsky))
+        clipActionLiang.triggered.connect(self.getClipDialog(Line.ClipAlgorithm.Liang_Barsky))
         clipMenu.addAction(clipActionLiang)
         transformMenu.addMenu(clipMenu)
 
     def getTranslateDialog(self):
-        text, ok = QInputDialog().getText(
-            self, f"Translate", "id dx dy", echo=QLineEdit.Normal)
+        text, ok = QInputDialog().getText(self, f"Translate", "id dx dy", echo=QLineEdit.Normal)
         if not ok or not text:
             return
         try:
@@ -609,40 +585,34 @@ class MainWindow(QMainWindow):
             print(e)
 
     def getRotateDialog(self):
-        text, ok = QInputDialog().getText(
-            self, f"Rotate", "id x0 y0 degree", echo=QLineEdit.Normal)
+        text, ok = QInputDialog().getText(self, f"Rotate", "id x0 y0 degree", echo=QLineEdit.Normal)
         if not ok or not text:
             return
         try:
             args = text.split()
-            self.canvas.rotateElement(
-                args[0], int(args[1]), int(args[2]), int(args[3]))
+            self.canvas.rotateElement(args[0], int(args[1]), int(args[2]), int(args[3]))
         except Exception as e:
             print(e)
 
     def getScaleDialog(self):
-        text, ok = QInputDialog().getText(
-            self, f"Scale", "id x0 y0 rate", echo=QLineEdit.Normal)
+        text, ok = QInputDialog().getText(self, f"Scale", "id x0 y0 rate", echo=QLineEdit.Normal)
         if not ok or not text:
             return
         try:
             args = text.split()
-            self.canvas.scaleElement(
-                args[0], int(args[1]), int(args[2]), float(args[3]))
+            self.canvas.scaleElement(args[0], int(args[1]), int(args[2]), float(args[3]))
         except Exception as e:
             print(e)
 
     def getClipDialog(self, algorithm: Line.ClipAlgorithm):
         def f():
-            text, ok = QInputDialog().getText(
-                self, f"Clip", "id x0 y0 x1 x2", echo=QLineEdit.Normal)
+            text, ok = QInputDialog().getText(self, f"Clip", "id x0 y0 x1 x2", echo=QLineEdit.Normal)
             if not ok or not text:
                 return
             try:
                 args = text.split()
                 self.canvas.clipElement(
-                    args[0], int(args[1]), int(args[2]),
-                    int(args[3]), int(args[4]), algorithm)
+                    args[0], int(args[1]), int(args[2]), int(args[3]), int(args[4]), algorithm)
             except Exception as e:
                 print(e)
         return f
@@ -660,8 +630,7 @@ class MainWindow(QMainWindow):
         horizonLayout.addWidget(self.canvas, alignment=Qt.AlignTop)
 
         # Spacing
-        horizonLayout.addSpacerItem(QSpacerItem(
-            0, 0, hPolicy=QSizePolicy.Expanding, vPolicy=QSizePolicy.Expanding))
+        horizonLayout.addSpacerItem(QSpacerItem(0, 0, hPolicy=QSizePolicy.Expanding, vPolicy=QSizePolicy.Expanding))
 
         # List
         self.canvas.listWidget.setFixedWidth(200)
@@ -739,14 +708,10 @@ class MainWindow(QMainWindow):
                 self.updateActingStatus(a)
                 self.canvas.pointList = []
             return f
-        self.bLine.toggled.connect(
-            getPrimitiveButtonFunc(self.bLine, Acting.Line))
-        self.bPolygon.toggled.connect(
-            getPrimitiveButtonFunc(self.bPolygon, Acting.Polygon))
-        self.bEllipse.toggled.connect(
-            getPrimitiveButtonFunc(self.bEllipse, Acting.Ellipse))
-        self.bCurve.toggled.connect(
-            getPrimitiveButtonFunc(self.bCurve, Acting.Curve))
+        self.bLine.toggled.connect(getPrimitiveButtonFunc(self.bLine, Acting.Line))
+        self.bPolygon.toggled.connect(getPrimitiveButtonFunc(self.bPolygon, Acting.Polygon))
+        self.bEllipse.toggled.connect(getPrimitiveButtonFunc(self.bEllipse, Acting.Ellipse))
+        self.bCurve.toggled.connect(getPrimitiveButtonFunc(self.bCurve, Acting.Curve))
 
         # Transform
         self.toolBar.addWidget(QLabel("Transform"), col, 0, 1, widthFull)
@@ -781,16 +746,16 @@ class MainWindow(QMainWindow):
             for i in range(len(cs)):
 
                 b1 = QPushButton(u"\u25A0")
-                b1.setStyleSheet(
-                    f"QPushButton {{color:rgb({cs[i][0]},{cs[i][1]},{cs[i][2]});}}")
+                b1.setStyleSheet(f"QPushButton {{color:rgb({cs[i][0]},{cs[i][1]},{cs[i][2]});}}")
                 b1.clicked.connect(getSetColor(self, *cs[i]))
                 self.toolBar.addWidget(b1, col, i, 1, 1)
 
             col += 1
 
         # Spacer
-        self.toolBar.addItem(QSpacerItem(
-            0, 0, hPolicy=QSizePolicy.Expanding, vPolicy=QSizePolicy.Expanding), col, 0, 1, widthFull)
+        self.toolBar.addItem(
+            QSpacerItem(0, 0, hPolicy=QSizePolicy.Expanding, vPolicy=QSizePolicy.Expanding),
+            col, 0, 1, widthFull)
 
     def setColor(self, r: int, g: int, b: int):
         self.color = (r, g, b)
