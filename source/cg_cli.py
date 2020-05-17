@@ -7,13 +7,14 @@ from PIL import Image
 
 
 class Board():
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, output_dir: str = ""):
         if height <= 0 or width <= 0:
             raise ValueError("Board size should be greater to 0")
         self.height = height
         self.width = width
         self.color = ColorTable.BLACK
         self.primitives: Dict[str, (Primitive, Color)] = {}
+        self.output_dir = output_dir
 
     def setColor(self, color: Color):
         self.color = color
@@ -83,6 +84,84 @@ class Board():
     def save(self, path: str):
         Image.fromarray(self.render()).save(path)
 
+    def exec(self, cmd: str):
+        argv = cmd.split()
+        argc = len(argv)
+        if argv[0] == "resetCanvas":
+            self.reset(int(argv[1]), int(argv[2]))
+        elif argv[0] == "saveCanvas":
+            if self.output_dir:
+                self.save(os.path.join(self.output_dir, argv[1] + ".bmp"))
+        elif argv[0] == "setColor":
+            self.setColor((
+                int(argv[1]),
+                int(argv[2]),
+                int(argv[3]),
+            ))
+        elif argv[0] == "drawLine":
+            self.addPrimitive(
+                argv[1], Line(
+                    int(argv[2]), int(argv[3]),
+                    int(argv[4]), int(argv[5]),
+                    Line.Algorithm.DDA if argv[6] == "DDA" else Line.Algorithm.Bresenham
+                )
+            )
+        elif argv[0] == "drawPolygon":
+            pn = (argc - 3) // 2
+            ps = []
+            for i in range(pn):
+                ps.append(
+                    (int(argv[i*2+2]), int(argv[i*2+3]))
+                )
+            self.addPrimitive(
+                argv[1], Polygon(
+                    ps,
+                    Line.Algorithm.DDA if argv[-1] == "DDA" else Line.Algorithm.Bresenham
+                )
+            )
+        elif argv[0] == "drawEllipse":
+            self.addPrimitive(
+                argv[1], Ellipse(
+                    int(argv[2]), int(argv[3]),
+                    int(argv[4]), int(argv[5]),
+                )
+            )
+        elif argv[0] == "drawCurve":
+            pn = (argc - 3) // 2
+            ps = []
+            for i in range(pn):
+                ps.append(
+                    (int(argv[i*2+2]), int(argv[i*2+3]))
+                )
+            self.addPrimitive(
+                argv[1], Curve(
+                    ps,
+                    Curve.Algorithm.B_spline if argv[-1] == "B-spline" else Curve.Algorithm.Bezier
+                )
+            )
+        elif argv[0] == "translate":
+            self.translate(
+                argv[1], int(argv[2]), int(argv[3])
+            )
+        elif argv[0] == "rotate":
+            self.rotate(
+                argv[1], int(argv[2]), int(argv[3]), int(argv[4])
+            )
+        elif argv[0] == "scale":
+            self.scale(
+                argv[1], int(argv[2]), int(argv[3]), float(argv[4])
+            )
+        elif argv[0] == "clip":
+            self.clip(
+                argv[1],
+                int(argv[2]), int(argv[3]),
+                int(argv[4]), int(argv[5]),
+                Line.ClipAlgorithm.Cohen_Sutherland if argv[-1] == "Cohen-Sutherland" else Line.ClipAlgorithm.Liang_Barsky
+            )
+        else:
+            # invalid
+            pass
+
 
 if __name__ == "__main__":
     input_file = sys.argv[1]
@@ -90,83 +169,8 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     # default
-    board = Board(1000, 1000)
+    board = Board(1000, 1000, output_dir)
 
     with open(input_file, "r") as File:
         for line in File.readlines():
-            argv = line.split()
-            argc = len(argv)
-
-            if argv[0] == "resetCanvas":
-                board.reset(int(argv[1]), int(argv[2]))
-            elif argv[0] == "saveCanvas":
-                board.save(os.path.join(output_dir, argv[1] + ".bmp"))
-            elif argv[0] == "setColor":
-                board.setColor((
-                    int(argv[1]),
-                    int(argv[2]),
-                    int(argv[3]),
-                ))
-            elif argv[0] == "drawLine":
-                board.addPrimitive(
-                    argv[1], Line(
-                        int(argv[2]), int(argv[3]),
-                        int(argv[4]), int(argv[5]),
-                        Line.Algorithm.DDA if argv[6] == "DDA" else Line.Algorithm.Bresenham
-                    )
-                )
-            elif argv[0] == "drawPolygon":
-                pn = (argc - 3) // 2
-                ps = []
-                for i in range(pn):
-                    ps.append(
-                        (int(argv[i*2+2]), int(argv[i*2+3]))
-                    )
-                board.addPrimitive(
-                    argv[1], Polygon(
-                        ps,
-                        Line.Algorithm.DDA if argv[-1] == "DDA" else Line.Algorithm.Bresenham
-                    )
-                )
-            elif argv[0] == "drawEllipse":
-                board.addPrimitive(
-                    argv[1], Ellipse(
-                        int(argv[2]), int(argv[3]),
-                        int(argv[4]), int(argv[5]),
-                    )
-                )
-            elif argv[0] == "drawCurve":
-                pn = (argc - 3) // 2
-                ps = []
-                for i in range(pn):
-                    ps.append(
-                        (int(argv[i*2+2]), int(argv[i*2+3]))
-                    )
-                board.addPrimitive(
-                    argv[1], Curve(
-                        ps,
-                        Curve.Algorithm.B_spline if argv[-1] == "B-spline" else Curve.Algorithm.Bezier
-                    )
-                )
-            elif argv[0] == "translate":
-                board.translate(
-                    argv[1], int(argv[2]), int(argv[3])
-                )
-            elif argv[0] == "rotate":
-                board.rotate(
-                    argv[1], int(argv[2]), int(argv[3]), int(argv[4])
-                )
-            elif argv[0] == "scale":
-                board.scale(
-                    argv[1], int(argv[2]), int(argv[3]), float(argv[4])
-                )
-            elif argv[0] == "clip":
-                board.clip(
-                    argv[1],
-                    int(argv[2]), int(argv[3]),
-                    int(argv[4]), int(argv[5]),
-                    Line.ClipAlgorithm.Cohen_Sutherland if argv[-1] == "Cohen-Sutherland" else Line.ClipAlgorithm.Liang_Barsky
-                )
-            else:
-                # invalid
-                pass
+            board.exec(line)

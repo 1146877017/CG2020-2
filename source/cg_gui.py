@@ -1,4 +1,5 @@
 from cg_algorithms import *
+from cg_cli import Board
 
 import sys
 from enum import Enum
@@ -389,10 +390,11 @@ class MainWindow(QMainWindow):
         fileMenu = self.menuBar().addMenu('&File')
 
         # Load action
-        # loadAction = QAction('&Load', self)
-        # loadAction.setStatusTip('Load from script')
-        # loadAction.setShortcut('Ctrl+L')
-        # fileMenu.addAction(loadAction)
+        loadAction = QAction('&Load', self)
+        loadAction.setStatusTip('Load from script')
+        loadAction.setShortcut('Ctrl+L')
+        loadAction.triggered.connect(self.getLoadTXTDialog)
+        fileMenu.addAction(loadAction)
 
         # Save BMP action
         saveBMPAction = QAction('&Save BMP', self)
@@ -465,6 +467,25 @@ class MainWindow(QMainWindow):
             return
         try:
             self.saveFileTXT(fileName)
+        except Exception as e:
+            print(e)
+
+    def loadFileTXT(self, name: str):
+        board: Board = Board(1000, 1000)
+        with open(name, "r") as File:
+            for line in File.readlines():
+                board.exec(line)
+        self.resetSize(board.width, board.height)
+        for key in board.primitives:
+            self.setColor(*board.primitives[key][1])
+            self.addElement(board.primitives[key][0])
+
+    def getLoadTXTDialog(self):
+        fileName = QFileDialog.getOpenFileName(self, "Load from text file")[0]
+        if not fileName:
+            return
+        try:
+            self.loadFileTXT(fileName)
         except Exception as e:
             print(e)
 
