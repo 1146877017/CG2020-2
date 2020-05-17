@@ -2,8 +2,12 @@ from cg_algorithms import *
 
 import sys
 from enum import Enum
+import math
 
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtCore import (
+    Qt,
+    QRectF
+)
 
 from PyQt5.QtWidgets import (
     QMainWindow,
@@ -33,7 +37,15 @@ from PyQt5.QtWidgets import (
 )
 
 
-from PyQt5.QtGui import QIcon, QColor, QPainter, QPalette, QImage, QPixmap, QMouseEvent
+from PyQt5.QtGui import (
+    QIcon,
+    QColor,
+    QPainter,
+    QPalette,
+    QImage,
+    QPixmap,
+    QMouseEvent
+)
 
 
 class Acting(Enum):
@@ -186,6 +198,7 @@ class MainCanvas(QGraphicsView):
         if e.primitive.clip(x0, y0, x1, y1, algorithm):
             self.updateElement(id)
         else:
+            print("delete")
             self.delElement(id)
 
     # def clearHelperCanvasItems(self):
@@ -220,7 +233,7 @@ class MainCanvas(QGraphicsView):
         self.clearDrawingElement()
         pos = self.mapToScene(event.localPos().toPoint())
         x, y = int(pos.x()), int(pos.y())
-        if self.main.acting == Acting.Free:
+        if self.main.acting == Acting.Free or (self.main.acting in [Acting.Translate, Acting.Rotate, Acting.Scale, Acting.Clip] and not self.selecting):
             minSquare = 10000 ** 2
             targetE: Element = None
             for id in self.elements:
@@ -250,13 +263,58 @@ class MainCanvas(QGraphicsView):
                 if len(self.pointList) >= 2:
                     self.drawingElement = Element("", Curve(self.pointList, Curve.Algorithm.Bezier), self.main.color)
             elif self.main.acting == Acting.Translate:
-                pass
+                rect = self.selecting.element.boundingRect()
+                x0 = rect.x() + rect.width() / 2
+                y0 = rect.y() + rect.height() / 2
+                self.translateElement(self.selecting.element.id, int(x - x0), int(y - y0))
+                self.main.bTranslate.toggle()
             elif self.main.acting == Acting.Rotate:
-                pass
+                if len(self.pointList) >= 2:
+                    rect = self.selecting.element.boundingRect()
+                    x0 = rect.x() + rect.width() / 2
+                    y0 = rect.y() + rect.height() / 2
+                    x1, y1 = self.pointList[0][0], self.pointList[0][1]
+                    x2, y2 = self.pointList[1][0], self.pointList[1][1]
+                    if x1 == x0 and y1 == y0:
+                        x1 += 1
+                    if x2 == x0 and y2 == y0:
+                        x2 += 1
+                    dx1, dy1 = x1 - x0, y1 - y0
+                    dx2, dy2 = x2 - x0, y2 - y0
+                    d1 = math.acos(dx1 / math.sqrt(dx1**2 + dy1**2)) * 180 / math.pi
+                    d2 = math.acos(dx2 / math.sqrt(dx2**2 + dy2**2)) * 180 / math.pi
+                    # cos1 = (dx1*dx2 + dy1*dy2) / (math.sqrt((dx1**2 + dy1**2) * (dx2**2 + dy2**2)))
+                    deg = 0
+                    if dy1 >= 0 and dy2 >= 0:
+                        deg = d1 - d2
+                    elif dy1 >= 0 and dy2 < 0:
+                        deg = d1 + d2
+                    elif dy1 < 0 and dy2 >= 0:
+                        deg = -d1 - d2
+                    else:
+                        # dy1, dy2 < 0
+                        deg = d2 - d1
+                    self.rotateElement(self.selecting.element.id, x0, y0, -int(deg))
+                    self.main.bRotate.toggle()
+
             elif self.main.acting == Acting.Scale:
-                pass
-            elif self.main.acting == Acting.Clip and self.selecting.primitive.type == Primitive.PType.line:
-                pass
+                if len(self.pointList) >= 2:
+                    rect = self.selecting.element.boundingRect()
+                    x0 = rect.x() + rect.width() / 2
+                    y0 = rect.y() + rect.height() / 2
+                    d1 = math.sqrt((self.pointList[0][0] - x0)**2 + (self.pointList[0][1] - y0)**2)
+                    d2 = math.sqrt((self.pointList[1][0] - x0)**2 + (self.pointList[1][1] - y0)**2)
+                    if d1 == 0:
+                        d1 = 1
+                    self.scaleElement(self.selecting.element.id, x0, y0, d2/d1)
+                    self.main.bScale.toggle()
+            elif self.main.acting == Acting.Clip:
+                if self.selecting.element.primitive.type != Primitive.PType.line:
+                    self.main.bClip.toggle()
+                if len(self.pointList) >= 2:
+                    self.clipElement(
+                        self.selecting.element.id, *self.pointList[0], *self.pointList[1], Line.ClipAlgorithm.Cohen_Sutherland)
+                    self.main.bClip.toggle()
 
         self.updateDrawingElement()
         self.scene.update()
@@ -680,18 +738,34 @@ class MainWindow(QMainWindow):
             return ret
 
         self.bLine = getPrimitiveButton(Acting.Line)
+        self.bPolygon = getPrimitiveButton(Acting.Polygon)
+        self.bEllipse = getPrimitiveButton(Acting.Ellipse)
+        self.bCurve = getPrimitiveButton(Acting.Curve)
+
+        def getTransformButton(a: Acting):
+            ret = QPushButton(a.name)
+            ret.setCheckable(True)
+            return ret
+
+        self.bTranslate = getTransformButton(Acting.Translate)
+        self.bRotate = getTransformButton(Acting.Rotate)
+        self.bScale = getTransformButton(Acting.Scale)
+        self.bClip = getTransformButton(Acting.Clip)
+
+        buttonList = [
+            self.bLine, self.bPolygon, self.bEllipse, self.bCurve,
+            self.bTranslate, self.bRotate, self.bScale, self.bClip
+        ]
+
         self.toolBar.addWidget(self.bLine, col, 0, 1, widthFull)
         col += 1
 
-        self.bPolygon = getPrimitiveButton(Acting.Polygon)
         self.toolBar.addWidget(self.bPolygon, col, 0, 1, widthFull)
         col += 1
 
-        self.bEllipse = getPrimitiveButton(Acting.Ellipse)
         self.toolBar.addWidget(self.bEllipse, col, 0, 1, widthFull)
         col += 1
 
-        self.bCurve = getPrimitiveButton(Acting.Curve)
         self.toolBar.addWidget(self.bCurve, col, 0, 1, widthFull)
         col += 1
 
@@ -701,7 +775,7 @@ class MainWindow(QMainWindow):
                     self.canvas.pointList = []
                     self.updateActingStatus(Acting.Free)
                     return
-                for button in [self.bLine, self.bPolygon, self.bEllipse, self.bCurve]:
+                for button in buttonList:
                     if button != s and button.isChecked():
                         button.toggle()
                 self.canvas.clearSelection()
@@ -716,13 +790,32 @@ class MainWindow(QMainWindow):
         # Transform
         self.toolBar.addWidget(QLabel("Transform"), col, 0, 1, widthFull)
         col += 1
-        self.toolBar.addWidget(QPushButton("Translate"), col, 0, 1, widthFull)
+
+        def getTransformButtonFunc(s, a: Acting):
+            def f(b: bool):
+                if not b:
+                    self.canvas.pointList = []
+                    self.updateActingStatus(Acting.Free)
+                    return
+                for button in buttonList:
+                    if button != s and button.isChecked():
+                        button.toggle()
+                self.updateActingStatus(a)
+                self.canvas.pointList = []
+            return f
+
+        self.bTranslate.toggled.connect(getTransformButtonFunc(self.bTranslate, Acting.Translate))
+        self.bRotate.toggled.connect(getTransformButtonFunc(self.bRotate, Acting.Rotate))
+        self.bScale.toggled.connect(getTransformButtonFunc(self.bScale, Acting.Scale))
+        self.bClip.toggled.connect(getTransformButtonFunc(self.bClip, Acting.Clip))
+
+        self.toolBar.addWidget(self.bTranslate, col, 0, 1, widthFull)
         col += 1
-        self.toolBar.addWidget(QPushButton("Rotate"), col, 0, 1, widthFull)
+        self.toolBar.addWidget(self.bRotate, col, 0, 1, widthFull)
         col += 1
-        self.toolBar.addWidget(QPushButton("Scale"), col, 0, 1, widthFull)
+        self.toolBar.addWidget(self.bScale, col, 0, 1, widthFull)
         col += 1
-        self.toolBar.addWidget(QPushButton("Clip"), col, 0, 1, widthFull)
+        self.toolBar.addWidget(self.bClip, col, 0, 1, widthFull)
         col += 1
 
         # Color

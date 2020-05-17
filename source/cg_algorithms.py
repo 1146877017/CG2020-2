@@ -40,7 +40,7 @@ class Primitive(ABC):
 
     def render(self) -> List[Point]:
         if not self.saved:
-            self.saved = self._render()
+            self.saved = list(dict.fromkeys(self._render()))
         return self.saved
 
     @abstractmethod
