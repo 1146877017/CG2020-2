@@ -144,6 +144,8 @@ class MainCanvas(QGraphicsView):
     def delElement(self, id: str):
         try:
             e = self.elements[id]
+            self.translateElement(id, self.main.size[0]*2, self.main.size[1]*2)
+            self.scene.update()
             self.scene.removeItem(e)
             self.listWidget.takeItem(self.listWidget.indexFromItem(e.listItem).row())
             del self.elements[id]
