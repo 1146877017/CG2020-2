@@ -337,6 +337,7 @@ class Polygon(Primitive):
         super().__init__(Primitive.PType.polygon)
         if not points:
             raise ValueError("Points number should be greater than 0")
+        self.algorithm = algorithm
         self.lines: List[Line] = []
         for i in range(len(points)):
             self.lines.append(

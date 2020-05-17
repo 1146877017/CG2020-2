@@ -394,12 +394,19 @@ class MainWindow(QMainWindow):
         # loadAction.setShortcut('Ctrl+L')
         # fileMenu.addAction(loadAction)
 
-        # Save action
-        saveAction = QAction('&Save', self)
-        saveAction.setStatusTip('Save the canvas')
-        saveAction.setShortcut('Ctrl+S')
-        saveAction.triggered.connect(self.getSaveDialog)
-        fileMenu.addAction(saveAction)
+        # Save BMP action
+        saveBMPAction = QAction('&Save BMP', self)
+        saveBMPAction.setStatusTip('Save the canvas as BMP')
+        saveBMPAction.setShortcut('Ctrl+E')
+        saveBMPAction.triggered.connect(self.getSaveBMPDialog)
+        fileMenu.addAction(saveBMPAction)
+
+        # Save TXT action
+        saveTXTAction = QAction('&Save TXT', self)
+        saveTXTAction.setStatusTip('Save the canvas as TXT')
+        saveTXTAction.setShortcut('Ctrl+S')
+        saveTXTAction.triggered.connect(self.getSaveTXTDialog)
+        fileMenu.addAction(saveTXTAction)
 
         # Exit action
         exitAction = QAction('&Exit', self)
@@ -408,7 +415,7 @@ class MainWindow(QMainWindow):
         exitAction.triggered.connect(qApp.quit)
         fileMenu.addAction(exitAction)
 
-    def saveFile(self, name: str):
+    def saveFileBMP(self, name: str):
         self.canvas.clearSelection()
         img = QImage(self.size[0], self.size[1], QImage.Format_ARGB32)
         painter = QPainter(img)
@@ -416,12 +423,48 @@ class MainWindow(QMainWindow):
         img.save(name)
         painter.end()
 
-    def getSaveDialog(self):
-        fileName = QFileDialog.getSaveFileName(self, "Save Canvas", "output.bmp", "Images (*.bmp)")[0]
+    def getSaveBMPDialog(self):
+        fileName = QFileDialog.getSaveFileName(self, "Save Canvas as BMP", "output.bmp", "Images (*.bmp)")[0]
         if not fileName:
             return
         try:
-            self.saveFile(fileName)
+            self.saveFileBMP(fileName)
+        except Exception as e:
+            print(e)
+
+    def saveFileTXT(self, name: str):
+        with open(name, "w") as File:
+            File.write(f"resetCanvas {self.size[0]} {self.size[1]}\n")
+            for k in self.canvas.elements:
+                e: Element = self.canvas.elements[k]
+                File.write(f"setColor {e.color[0]} {e.color[1]} {e.color[2]}\n")
+                p: Primitive = e.primitive
+                text = ""
+                if p.type == Primitive.PType.line:
+                    text = f"drawLine {e.id} {p.x0} {p.y0} {p.x1} {p.y1} {p.algorithm.name}"
+                elif p.type == Primitive.PType.polygon:
+                    text = f"drawPolygon {e.id} "
+                    for l in p.lines:
+                        text += f"{l.x1} {l.y1} "
+                    text += f"{p.algorithm.name}"
+                elif p.type == Primitive.PType.ellipse:
+                    text = f"drawEllipse {e.id} {p.cx - p.rx} {p.cy - p.ry} {p.cx + p.rx} {p.cy + p.ry}"
+                elif p.type == Primitive.PType.curve:
+                    text = f"drawCurve {e.id} "
+                    for point in p.points:
+                        text += f"{point[0]} {point[1]} "
+                    if p.algorithm == Curve.Algorithm.Bezier:
+                        text += "Bezier"
+                    else:
+                        text += "B-spline"
+                File.write(text + "\n")
+
+    def getSaveTXTDialog(self):
+        fileName = QFileDialog.getSaveFileName(self, "Save Canvas as TXT", "output.txt")[0]
+        if not fileName:
+            return
+        try:
+            self.saveFileTXT(fileName)
         except Exception as e:
             print(e)
 
