@@ -110,7 +110,7 @@ class MainCanvas(QGraphicsView):
         self.scene.setBackgroundBrush(Qt.white)
 
         self.elements = {}
-        self.selecting: ListItem = None
+        self.selecting: Element = None
 
         self.pointList = []
         # self.helperCanvasItems = []
@@ -132,7 +132,7 @@ class MainCanvas(QGraphicsView):
             self.selecting = None
             self.main.infoStatusLabel.setText("")
             return
-        self.selecting = items[0]
+        self.selecting = items[0].element
         self.main.infoStatusLabel.setText("Selecting: " + items[0].element.__str__())
         self.scene.update(self.scene.sceneRect())
 
@@ -269,14 +269,14 @@ class MainCanvas(QGraphicsView):
                 if len(self.pointList) >= 2:
                     self.drawingElement = Element("", Curve(self.pointList, self.main.curveAlgorithm), self.main.color)
             elif self.main.acting == Acting.Translate:
-                rect = self.selecting.element.boundingRect()
+                rect = self.selecting.boundingRect()
                 x0 = rect.x() + rect.width() / 2
                 y0 = rect.y() + rect.height() / 2
-                self.translateElement(self.selecting.element.id, int(x - x0), int(y - y0))
+                self.translateElement(self.selecting.id, int(x - x0), int(y - y0))
                 self.main.bTranslate.toggle()
             elif self.main.acting == Acting.Rotate:
                 if len(self.pointList) >= 2:
-                    rect = self.selecting.element.boundingRect()
+                    rect = self.selecting.boundingRect()
                     x0 = rect.x() + rect.width() / 2
                     y0 = rect.y() + rect.height() / 2
                     x1, y1 = self.pointList[0][0], self.pointList[0][1]
@@ -300,26 +300,26 @@ class MainCanvas(QGraphicsView):
                     else:
                         # dy1, dy2 < 0
                         deg = d2 - d1
-                    self.rotateElement(self.selecting.element.id, x0, y0, -int(deg))
+                    self.rotateElement(self.selecting.id, x0, y0, -int(deg))
                     self.main.bRotate.toggle()
 
             elif self.main.acting == Acting.Scale:
                 if len(self.pointList) >= 2:
-                    rect = self.selecting.element.boundingRect()
+                    rect = self.selecting.boundingRect()
                     x0 = rect.x() + rect.width() / 2
                     y0 = rect.y() + rect.height() / 2
                     d1 = math.sqrt((self.pointList[0][0] - x0)**2 + (self.pointList[0][1] - y0)**2)
                     d2 = math.sqrt((self.pointList[1][0] - x0)**2 + (self.pointList[1][1] - y0)**2)
                     if d1 == 0:
                         d1 = 1
-                    self.scaleElement(self.selecting.element.id, x0, y0, d2/d1)
+                    self.scaleElement(self.selecting.id, x0, y0, d2/d1)
                     self.main.bScale.toggle()
             elif self.main.acting == Acting.Clip:
-                if self.selecting.element.primitive.type != Primitive.PType.line:
+                if self.selecting.primitive.type != Primitive.PType.line:
                     self.main.bClip.toggle()
                 if len(self.pointList) >= 2:
                     self.clipElement(
-                        self.selecting.element.id, *self.pointList[0], *self.pointList[1], Line.ClipAlgorithm.Cohen_Sutherland)
+                        self.selecting.id, *self.pointList[0], *self.pointList[1], Line.ClipAlgorithm.Cohen_Sutherland)
                     self.main.bClip.toggle()
 
         self.updateDrawingElement()
@@ -792,7 +792,7 @@ class MainWindow(QMainWindow):
         # Delete
         def bDeleteFunc():
             if self.canvas.selecting:
-                self.canvas.delElement(self.canvas.selecting.element.id)
+                self.canvas.delElement(self.canvas.selecting.id)
         bDelete = QPushButton("Delete")
         bDelete.clicked.connect(bDeleteFunc)
         self.toolBar.addWidget(bDelete, col, 0, 1, widthFull)
@@ -936,8 +936,8 @@ class MainWindow(QMainWindow):
 
     def setColor(self, r: int, g: int, b: int):
         if self.canvas.selecting:
-            self.canvas.selecting.element.color = (r, g, b)
-            self.canvas.updateElement(self.canvas.selecting.element.id)
+            self.canvas.selecting.color = (r, g, b)
+            self.canvas.updateElement(self.canvas.selecting.id)
         self.color = (r, g, b)
         self.colorStatusLabel.setText(f"Color: ({r},{g},{b})")
 
