@@ -110,7 +110,7 @@ class MainCanvas(QGraphicsView):
         self.scene.setBackgroundBrush(Qt.white)
 
         self.elements = {}
-        self.selecting: Element = None
+        self.selecting: ListItem = None
 
         self.pointList = []
         # self.helperCanvasItems = []
@@ -935,6 +935,9 @@ class MainWindow(QMainWindow):
             col, 0, 1, widthFull)
 
     def setColor(self, r: int, g: int, b: int):
+        if self.canvas.selecting:
+            self.canvas.selecting.element.color = (r, g, b)
+            self.canvas.updateElement(self.canvas.selecting.element.id)
         self.color = (r, g, b)
         self.colorStatusLabel.setText(f"Color: ({r},{g},{b})")
 
