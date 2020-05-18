@@ -344,14 +344,14 @@ class MainWindow(QMainWindow):
         self.resetSize(500, 500)
         self.updateActingStatus(Acting.Free)
 
-        self.addElement(Line(100, 400, 300, 200, Line.Algorithm.DDA))
-        self.addElement(Line(200, 200, 400, 400, Line.Algorithm.Bresenham))
-        self.setColor(96, 211, 148)
-        self.addElement(Ellipse(200, 100, 350, 460))
-        self.setColor(255, 0, 0)
-        self.addElement(Polygon([(0, 0), (100, 200), (300, 100)], Line.Algorithm.Bresenham))
-        self.setColor(0, 255, 0)
-        self.addElement(Curve([(0, 0), (100, 200), (300, 100)], Curve.Algorithm.B_spline))
+        # self.addElement(Line(100, 400, 300, 200, Line.Algorithm.DDA))
+        # self.addElement(Line(200, 200, 400, 400, Line.Algorithm.Bresenham))
+        # self.setColor(96, 211, 148)
+        # self.addElement(Ellipse(200, 100, 350, 460))
+        # self.setColor(255, 0, 0)
+        # self.addElement(Polygon([(0, 0), (100, 200), (300, 100)], Line.Algorithm.Bresenham))
+        # self.setColor(0, 255, 0)
+        # self.addElement(Curve([(0, 0), (100, 200), (300, 100)], Curve.Algorithm.B_spline))
 
     def initUI(self):
 
@@ -390,7 +390,7 @@ class MainWindow(QMainWindow):
         fileMenu = self.menuBar().addMenu('&File')
 
         # Load action
-        loadAction = QAction('&Load', self)
+        loadAction = QAction('&Load TXT', self)
         loadAction.setStatusTip('Load from script')
         loadAction.setShortcut('Ctrl+L')
         loadAction.triggered.connect(self.getLoadTXTDialog)
