@@ -1,0 +1,11 @@
+resetCanvas 500 500
+setColor 0 0 0
+drawLine 1 100 400 300 200 DDA
+setColor 0 0 0
+drawLine 2 200 200 400 400 Bresenham
+setColor 96 211 148
+drawEllipse 3 200 100 350 460
+setColor 255 0 0
+drawPolygon 4 0 0 100 200 300 100 Bresenham
+setColor 0 255 0
+drawCurve 5 0 0 100 200 300 100 B-spline
