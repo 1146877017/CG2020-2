@@ -23,7 +23,7 @@ class Board():
         return self.color
 
     def reset(self, width: int, height: int):
-        self.__init__(width, height)
+        self.__init__(width, height, self.output_dir)
 
     def render(self):
         canvas = np.zeros([self.height, self.width, 3], np.uint8)
