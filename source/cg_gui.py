@@ -335,6 +335,7 @@ class MainWindow(QMainWindow):
         self.size = (0, 0)
         self.scene = QGraphicsScene(self)
         self.canvas = MainCanvas(self.scene, self)
+        self.canvas.scale(1, -1)
         self.curveAlgorithm = Curve.Algorithm.Bezier
 
         self.initUI()
