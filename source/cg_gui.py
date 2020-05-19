@@ -474,7 +474,10 @@ class MainWindow(QMainWindow):
         board: Board = Board(1000, 1000)
         with open(name, "r") as File:
             for line in File.readlines():
-                board.exec(line)
+                try:
+                    board.exec(line)
+                except Exception as e:
+                    print(e)
         self.resetSize(board.width, board.height)
         for key in board.primitives:
             self.setColor(*board.primitives[key][1])

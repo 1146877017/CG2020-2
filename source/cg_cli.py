@@ -31,7 +31,7 @@ class Board():
         for primitive, color in self.primitives.values():
             for p in primitive.render():
                 if p[0] >= 0 and p[0] < self.width and p[1] >= 0 and p[1] < self.height:
-                    canvas[p[1]][p[0]] = color
+                    canvas[self.height-p[1]-1][p[0]] = color
         return canvas
 
     def addPrimitive(self, id: str, p: Primitive):
@@ -51,7 +51,7 @@ class Board():
     def rotate(self, id: str, x: int, y: int, r: int) -> None:
         prim = self.primitives.get(id)
         if prim:
-            prim[0].rotate(x, y, r)
+            prim[0].rotate(x, y, -r)
 
     def scale(self, id: str, x: int, y: int, s: float) -> None:
         prim = self.primitives.get(id)
@@ -87,6 +87,8 @@ class Board():
     def exec(self, cmd: str):
         argv = cmd.split()
         argc = len(argv)
+        if argc <= 0:
+            return
         if argv[0] == "resetCanvas":
             self.reset(int(argv[1]), int(argv[2]))
         elif argv[0] == "saveCanvas":
@@ -173,4 +175,7 @@ if __name__ == "__main__":
 
     with open(input_file, "r") as File:
         for line in File.readlines():
-            board.exec(line)
+            try:
+                board.exec(line)
+            except Exception as e:
+                print(e)
