@@ -206,7 +206,6 @@ class MainCanvas(QGraphicsView):
         if e.primitive.clip(x0, y0, x1, y1, algorithm):
             self.updateElement(id)
         else:
-            print("delete")
             self.delElement(id)
 
     # def clearHelperCanvasItems(self):
