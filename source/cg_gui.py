@@ -145,7 +145,7 @@ class MainCanvas(QGraphicsView):
     def delElement(self, id: str):
         try:
             e = self.elements[id]
-            self.translateElement(id, self.main.size[0]*2, self.main.size[1]*2)
+            # self.translateElement(id, self.main.size[0]*2, self.main.size[1]*2)
             self.scene.update()
             self.scene.removeItem(e)
             self.listWidget.takeItem(self.listWidget.indexFromItem(e.listItem).row())
@@ -177,6 +177,7 @@ class MainCanvas(QGraphicsView):
         e = self.getElement(id)
         if not e:
             return
+        e.prepareGeometryChange()
         e.primitive.translate(dx, dy)
         self.updateElement(id)
 
@@ -184,6 +185,7 @@ class MainCanvas(QGraphicsView):
         e = self.getElement(id)
         if not e:
             return
+        e.prepareGeometryChange()
         e.primitive.rotate(x0, y0, deg)
         self.updateElement(id)
 
@@ -191,6 +193,7 @@ class MainCanvas(QGraphicsView):
         e = self.getElement(id)
         if not e:
             return
+        e.prepareGeometryChange()
         e.primitive.scale(x0, y0, rate)
         self.updateElement(id)
 
@@ -198,6 +201,8 @@ class MainCanvas(QGraphicsView):
         e = self.getElement(id)
         if not e or e.primitive.type != Primitive.PType.line:
             return
+        e.prepareGeometryChange()
+
         if e.primitive.clip(x0, y0, x1, y1, algorithm):
             self.updateElement(id)
         else:
