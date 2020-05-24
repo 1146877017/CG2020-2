@@ -544,7 +544,7 @@ class MainWindow(QMainWindow):
         self.scene.clear()
         self.scene.setSceneRect(0, 0, width, height)
         self.scene.addRect(-1, -1, width+2, height+2)
-        self.canvas.setFixedSize(width*1.05, height*1.05)
+        self.canvas.setFixedSize(width + 25, height + 25)
         self.adjustSize()
         self.sizeStatusLabel.setText(f"Size: ({width},{height})")
 
